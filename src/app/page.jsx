@@ -1,9 +1,7 @@
 'use client'
 
-import Image from "next/image";
 import FileImport from "./FileImport"
 import React from 'react'
-import Script from 'next/script'
 import DataTable from "./DataTable"
 import GraphPanel from "./GraphPanel"
 import NavDrawer from "./NavDrawer"
@@ -16,6 +14,7 @@ import {
 } from "@mui/material";
 import {pathsep} from "./defs"
 import {metadata} from "./LightroomDB"
+import useScript from "./useScript"
 
 const MainMinusDrawer = styled(
   'main', 
@@ -28,42 +27,6 @@ const MainMinusDrawer = styled(
      })
   })
 );
-
-function DefaultFooter()
-{
-  return <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-    <a
-      className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-      href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      <Image
-        aria-hidden
-        src="/file.svg"
-        alt="File icon"
-        width={16}
-        height={16}
-      />
-      Learn
-    </a>
-    <a
-      className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-      href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      <Image
-        aria-hidden
-        src="/globe.svg"
-        alt="Globe icon"
-        width={16}
-        height={16}
-      />
-      Go to nextjs.org →
-    </a>
-  </footer>
-}
 
 function computeFolderAndFilesystemPathsFromImages(images)
 {
@@ -208,10 +171,27 @@ export default function Home() {
     [images]
   );
 
+  const onLoadCallback = React.useCallback(
+    () => {
+      console.log("hit onLoad callback!!");
+      initSqlJs({}).then( sq => {
+        setSQL(sq)
+      })
+      .catch(err => console.log("caught err while loading sql" + err.toString()))
+    },
+    [setSQL]
+  );
+
+  useScript({
+    src: "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.12.0/sql-wasm.js",
+    onLoad: onLoadCallback,
+    async: true
+  });
+
   const handleFileImport = (e) => {
     if(SQL)
     {
-      const byte_buffer = new Uint8Array(e.content);
+      const byte_buffer = e.content; // new Uint8Array(e.content);
       const localDB = new SQL.Database(byte_buffer);
       setDB(localDB);
       window.sql = SQL;
@@ -230,6 +210,10 @@ export default function Home() {
         }
       }
       setInProgress(false);
+    }
+    else
+    {
+      console.log("SQL not available");
     }
   }
   const handleDrawerClose = React.useCallback( 
@@ -287,7 +271,7 @@ export default function Home() {
       // todo: maybe we should capture the state of things at the start,
       // of this effect
       // so that we can abandon our computation as necessary?
-      if (folderFilters === [] && filesystemFilters === [] && filtersByMetric === {})
+      if (folderFilters.length === 0 && filesystemFilters.length === 0 && Object.keys(filtersByMetric).length === 0)
       {
         // TODO: figure out how this is threaded, with relation to the inputs
         setFilteredImageState({
@@ -426,16 +410,7 @@ export default function Home() {
   });
   // FIXME: What should we render if we've filtered all the images out?
 
-  return (<React.Fragment>
-      <Script
-        src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.12.0/sql-wasm.js" // TODO: load locally?
-        onLoad={()=>{
-          initSqlJs({}).then( sq => {
-            setSQL(sq)
-          })
-          .catch(err => console.log("caught err while loading sql" + err.toString()))
-        }}
-      />          
+  return (<React.Fragment>        
       <CssBaseline />
       <Box sx={{ display: 'flex' }}>
         {(images.length !== 0 && !inProgress) && 
@@ -479,7 +454,6 @@ export default function Home() {
               />}
               {inProgress && <WaitingMessage />}
         </div>
-          {false && <DefaultFooter />}
         </MainMinusDrawer>
         {metricsToPlot.map( (metric, index) => {
           return <GraphDialog

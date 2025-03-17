@@ -7,28 +7,33 @@
 
 import React from 'react'
 import Button from '@mui/material/Button';
+import { readFile, BaseDirectory } from '@tauri-apps/plugin-fs';
 
+// FIXME: This needs to migrate to tauri
+// there's a dialog that would support this
+// https://v1.tauri.app/v1/api/js/dialog/#open
 
 export default function FileImport({onImport, onStartImport, accept, buttonProps})
 {
   const hiddenFileInputRef = React.useRef(null);
-  // TODO: use React.useCallback/useMemo
-  const onChange = (e) => {
+  const onChange = async (e) => {
     if (onStartImport) {
       onStartImport();
     }
     for (const fileObject of e.target.files)
     {
-      const reader = new FileReader()
-      reader.onload = loadEvent => {
-        if( onImport )
+      // the fileObject only has local-context so we can't use it with readFile
+      // I don't think
+      const blob = await readFile(
+        "C:/lightroom catalogs/main - 2024/LOCAL_COPY/main-v13/main-v13 Helper.lrdata/metadatahelper.db"
+      );
+      if(onImport)
+      {
+        onImport(
         {
-          onImport(
-            { file: fileObject, content : loadEvent.target.result}
-          );
-        }
-      };
-      reader.readAsArrayBuffer(fileObject);
+          file: fileObject, content: blob
+        });
+      }
     }
   };
 
