@@ -10,6 +10,8 @@
     "opener:default",
     "opener:default",
     "fs:default",
-    "fs:allow-read-file"
+    "fs:allow-read-file",
+    "dialog:default",
+    "dialog:default"
   ]
 }
