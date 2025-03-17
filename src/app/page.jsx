@@ -1,6 +1,6 @@
 'use client'
 
-import FileImport from "./FileImport"
+import AsyncFileImport from "./AsyncFileImport"
 import React from 'react'
 import DataTable from "./DataTable"
 import GraphPanel from "./GraphPanel"
@@ -448,7 +448,7 @@ export default function Home() {
                   onSetFiltersForMetric={onSetFiltersForMetric}
                 />
               }
-              {(!inProgress && images.length === 0) && <FileImport 
+              {(!inProgress && images.length === 0) && <AsyncFileImport 
                 onStartImport={handleFileStartImport}
                 onImport={handleFileImport}
               />}
