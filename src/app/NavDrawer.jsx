@@ -1,5 +1,4 @@
 import Drawer from '@mui/material/Drawer';
-import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import CssBaseline from '@mui/material/CssBaseline';
 import List from '@mui/material/List';
@@ -142,7 +141,7 @@ const createNodeFromCache = (fullPath, relPath, queryCache) =>
     label: relPath
   };
   const childrenFromCache = queryCache[fullPath];
-  if (childrenFromCache !== []) // && childrenFromCache !== undefined
+  if (childrenFromCache.length !== 0) // && childrenFromCache !== undefined
   {
     let children = [];
     for (const childRelPath of childrenFromCache)

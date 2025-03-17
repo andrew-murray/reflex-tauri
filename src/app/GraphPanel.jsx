@@ -179,7 +179,7 @@ export default function GraphPanel({images, logSelected, onSetLogMode, ratingMod
                   </Grid>
                 </Grid>
             </Grid>
-            <Grid item xs={1} item>
+            <Grid item xs={1}>
                 <GraphSettingsPanel 
                     logSelected={logSelected}
                     onSetLogMode={onSetLogMode}

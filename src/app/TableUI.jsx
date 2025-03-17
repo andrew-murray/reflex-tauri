@@ -16,10 +16,8 @@ import {
     styled
 } from "@mui/material";
 import {
-    Cell,
     flexRender,
     getCoreRowModel,
-    Row,
     useReactTable,
 } from "@tanstack/react-table";
 import AddchartIcon from '@mui/icons-material/Addchart';
