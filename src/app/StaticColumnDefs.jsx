@@ -1,11 +1,25 @@
 import Rating from '@mui/material/Rating';
+import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
 
 const StaticColumnDefs = [ 
     {
         accessorKey:"com_adobe_absoluteFilepath",
         header: "Path",
         filterable: false,
-        plottable: false
+        plottable: false,
+        cell: ({cell, row}) => {
+            const path = row.original["com_adobe_absoluteFilepath"];
+            const jpegPath = path.replace(".CR2", ".jpg");
+            // fixme: tooltip just doesn't cut it, I can't customise it in the way I want
+            // but https://mui.com/material-ui/react-popover/ 
+            // is what I want ... but it probably needs a custom component in its own file, see OnHoverImage.jsx
+            return <Tooltip title="Delete">
+                <Typography>
+                    {path}
+                </Typography>
+            </Tooltip>
+        }
     },
     {
         accessorKey:"com_adobe_folder",

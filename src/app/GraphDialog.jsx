@@ -17,6 +17,7 @@ import * as Graphs from "./Graphs"
 import StaticColumnDefs from "./StaticColumnDefs";
 import BarChartIcon from '@mui/icons-material/BarChart';
 import PieChartIcon from '@mui/icons-material/PieChart';
+import AsyncImageFromFile from "./AsyncImageFromFile";
 
 // emulates how typeScript emulates enums
 const GraphModeEnum = { 
@@ -95,7 +96,11 @@ export default function GraphDialog({images, metricKey, handleClose, color}) {
       />
     </DialogTitle>
     <DialogContent style={{width: 500, height: 500, padding: 10}}>
-        <img src={"file://" + images[images.length - 100]["com_adobe_absoluteFilepath"].replace(".CR2", ".jpg")} />
+      <AsyncImageFromFile 
+        src={images[images.length - 10]["com_adobe_absoluteFilepath"].replace(".CR2", ".jpg")}
+        width={"100%"}
+        height={"100%"}
+      />
     </DialogContent>
   </Dialog>
 };
