@@ -27,4 +27,5 @@ tauri-plugin-dialog = "2"
 glob = "0.3.2"
 tauri-plugin-system-info = "2.0.9"
 sysinfo = "0.33.1"
+image = "0.25.5"
 
