@@ -10,6 +10,8 @@ use glob::glob;
 use sysinfo::{
     Disks
 };
+use image::DynamicImage;
+mod lrprev;
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where P: AsRef<Path>, {
@@ -102,6 +104,24 @@ fn find_configuration()  {
 }
 
 #[tauri::command]
+fn get_image_for_id() {
+    // I can invoke this, from the frontend, and this code executes properly
+    // TODO: need to take an image_id, and map it to the file in the previews
+    // TODO: need to return the image to the frontend
+    let _image_result = lrprev::get_jpegs_from_file(
+        r"C:\Users\andyr\OneDrive\Pictures\8AEF1EC2-56E1-4628-A4B5-E5DE6944D6FD-46674b86598837cc1969a390cec94d22.lrprev"
+    );
+    /*
+    if image_result.is_ok() {
+        let loaded_images = image_result.unwrap();
+        for im in loaded_images {
+            let _ = im.save("dumped_im.jpeg");
+        }
+    }
+    */
+}
+
+#[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
@@ -156,6 +176,7 @@ pub fn run() {
 
             Ok(())
         })
+        .invoke_handler(tauri::generate_handler![get_image_for_id])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

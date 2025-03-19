@@ -15,6 +15,8 @@ import {
 import {pathsep} from "./defs"
 import {metadata} from "./LightroomDB"
 import useScript from "./useScript"
+import { invoke } from "@tauri-apps/api/core";
+import Button from '@mui/material/Button';
 
 const MainMinusDrawer = styled(
   'main', 
@@ -173,7 +175,6 @@ export default function Home() {
 
   const onLoadCallback = React.useCallback(
     () => {
-      console.log("hit onLoad callback!!");
       initSqlJs({}).then( sq => {
         setSQL(sq)
       })
@@ -410,6 +411,12 @@ export default function Home() {
   });
   // FIXME: What should we render if we've filtered all the images out?
 
+  async function invoke_load() {
+    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+    // setGreetMsg(await invoke("get_image_for_id", {}));
+    await invoke("get_image_for_id", {});
+  }
+
   return (<React.Fragment>        
       <CssBaseline />
       <Box sx={{ display: 'flex' }}>
@@ -427,6 +434,7 @@ export default function Home() {
         }
         <MainMinusDrawer open={navOpen} style={{textAlign: "center",   display: "flex", alignItems: "center", justifyContent: "center"}}>
         <div style={{width: "80vw", minHeight: "80vh", margin: "auto", alignItems: "center"}}>
+          <Button onClick={invoke_load}>stuff</Button>
               {(images.length !== 0 && !inProgress) &&
                 <GraphPanel
                   images={filteredImageState.filteredImages}
