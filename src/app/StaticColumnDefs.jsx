@@ -1,6 +1,15 @@
 import Rating from '@mui/material/Rating';
-import Tooltip from '@mui/material/Tooltip';
+import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
+import { invoke } from "@tauri-apps/api/core";
+
+// todo: to see the consequences of this, I'll need to make StaticColumnDefs a factory
+// so that the image-state can pass out
+async function invoke_load(image_id) {
+// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+// setGreetMsg(await invoke("get_image_for_id", {}));
+    await invoke("get_image_for_id", {imageId: image_id.toString()});
+};
 
 const StaticColumnDefs = [ 
     {
@@ -9,16 +18,18 @@ const StaticColumnDefs = [
         filterable: false,
         plottable: false,
         cell: ({cell, row}) => {
+            console.log("clicked");
+            console.log(row.original);
             const path = row.original["com_adobe_absoluteFilepath"];
-            const jpegPath = path.replace(".CR2", ".jpg");
+            const image_id = row.original["imageid"];
             // fixme: tooltip just doesn't cut it, I can't customise it in the way I want
             // but https://mui.com/material-ui/react-popover/ 
             // is what I want ... but it probably needs a custom component in its own file, see OnHoverImage.jsx
-            return <Tooltip title="Delete">
+            return <Button onClick={()=>{invoke_load(image_id);}}>
                 <Typography>
                     {path}
                 </Typography>
-            </Tooltip>
+            </Button>
         }
     },
     {

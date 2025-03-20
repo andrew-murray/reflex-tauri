@@ -138,6 +138,7 @@ export const metadata = {
           db, 
           "AgImagesMetadata",
           [
+            "imageid",
             "com_adobe_absoluteFilepath",
             "com_adobe_folder", // this is like the collection, in adobe
             "com_adobe_rating", // float!
