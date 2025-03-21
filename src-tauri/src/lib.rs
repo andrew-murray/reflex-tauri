@@ -14,6 +14,7 @@ use sqlx::ConnectOptions;
 use sqlx::sqlite::{SqliteConnectOptions};
 use std::collections::HashMap;
 use futures::executor::block_on;
+use tauri::Manager;
 mod lrprev;
 
 struct AppState {
@@ -92,7 +93,7 @@ fn get_image_id_mapping()
     // todo; finish this line of thought to populate the db this might all have to happen on setup
 }
 
-async fn do_sql(preview_db_path: &str, state: &mut AppState)
+async fn do_sql(preview_db_path: &str) -> HashMap<u64, PreviewData>
 {
     let connection = SqliteConnectOptions::new()
         .read_only(true)
@@ -101,11 +102,12 @@ async fn do_sql(preview_db_path: &str, state: &mut AppState)
     let qresult = sqlx::query!("select imageId, uuid, digest, orientation from ImageCacheEntry")
         .fetch_all(&mut db)
         .await;
+    let mut image_id_to_image = HashMap::new();
     if qresult.is_ok()
     {
         let qr = qresult.unwrap();
         for image in qr {
-            state.image_id_to_image.insert(image.imageId as u64,PreviewData{ 
+            image_id_to_image.insert(image.imageId as u64,PreviewData{ 
                 image_id: image.imageId as u64, 
                 digest: image.digest, 
                 uuid: image.uuid,
@@ -129,6 +131,7 @@ async fn do_sql(preview_db_path: &str, state: &mut AppState)
     else {
         println!("{}", "all is not wel");
     }   
+    return image_id_to_image;
 }
 
 fn get_preview_db_path() -> Option<String> {
@@ -281,16 +284,18 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_system_info::init())
         .setup(|app| {
-            let mut state = AppState{
-                image_id_to_image: HashMap::new()
-            };
-
             let _ = find_configuration();
             let preview_db_path = get_preview_db_path();
             if preview_db_path.is_some() {
                 // TODO: BLOCKING IS BAD
                 // block_on(do_sql(&preview_db_path.unwrap()));
-                block_on(do_sql(&preview_db_path.unwrap(), &mut state));
+                let image_id_to_image = block_on(do_sql(&preview_db_path.unwrap()));
+                app.manage(AppState{
+                    image_id_to_image: image_id_to_image
+                });
+            }
+            else {
+                unimplemented!();
             }
             // allowed the given directory
             // allow_all_ascii_drives(app);
