@@ -10,8 +10,15 @@ use glob::glob;
 use sysinfo::{
     Disks
 };
-use image::DynamicImage;
+use sqlx::ConnectOptions;
+use sqlx::sqlite::{SqliteConnectOptions};
+use std::collections::HashMap;
+use futures::executor::block_on;
 mod lrprev;
+
+struct AppState {
+    image_id_to_image: HashMap<u64, PreviewData>
+}
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where P: AsRef<Path>, {
@@ -64,7 +71,104 @@ fn get_library_path_from_config_file(adobe_config_path: &str) -> Result<String, 
     unimplemented!()
 }
 
-#[tauri::command]
+struct PreviewData {
+    image_id: u64,
+    uuid: String,
+    digest: String,
+    orientation: Option<String>,
+}
+
+fn get_image_id_mapping()
+{
+    let preview_db_path = get_preview_db_path();
+    if !preview_db_path.is_some()
+    {
+        unimplemented!()
+    }
+    // let connect_uri = "sqlite://".to_owned() + &preview_db_path.unwrap();
+    // let connection = SqliteConnectOptions::from_str(connect_uri)?
+    //    .read_only(true)
+    //    .connect();
+    // todo; finish this line of thought to populate the db this might all have to happen on setup
+}
+
+async fn do_sql(preview_db_path: &str, state: &mut AppState)
+{
+    let connection = SqliteConnectOptions::new()
+        .read_only(true)
+        .filename(preview_db_path);
+    let mut db = connection.connect().await.unwrap();
+    let qresult = sqlx::query!("select imageId, uuid, digest, orientation from ImageCacheEntry")
+        .fetch_all(&mut db)
+        .await;
+    if qresult.is_ok()
+    {
+        let qr = qresult.unwrap();
+        for image in qr {
+            state.image_id_to_image.insert(image.imageId as u64,PreviewData{ 
+                image_id: image.imageId as u64, 
+                digest: image.digest, 
+                uuid: image.uuid,
+                orientation: image.orientation
+            });
+        }
+        //let imageIdToImage = qr.into_iter().map(|image| (image.imageId as u64, image)).collect::<HashMap<_, _>>();
+        // let uuidToImage = imageIdToImage.iter().map(|(imp)|(imp.1.uuid.clone(), imp.1)).collect::<HashMap<_,_>>();
+        // for (imageId, image) in imageIdToImage.iter()
+        // {
+        //     
+        //     let disp = format!("uuid = {}, orientation = {}, digest = {}",
+        //        image.uuid,
+        //        image.orientation.clone().unwrap_or("".to_owned()),
+        //        image.digest
+        //     );
+        //     println!("imageId {} and image {}", imageId, disp);
+        // }
+        // println!("lenq {}", imageIdToImage.len());
+    }
+    else {
+        println!("{}", "all is not wel");
+    }   
+}
+
+fn get_preview_db_path() -> Option<String> {
+    let app_data_result = env::var("APPDATA");
+    if !app_data_result.is_ok() {
+        println!("{}", "unimp 1");
+        unimplemented!();
+    }
+
+    let app_data_dir = app_data_result.unwrap();
+    let preferences_relpath = "Adobe/Lightroom/Preferences/Lightroom Classic CC 7 Preferences.agprefs";  
+    let expected_adobe_prefs = app_data_dir + "/" + preferences_relpath;
+    let cat_path = get_library_path_from_config_file(&expected_adobe_prefs);
+    if !cat_path.is_ok() {
+        println!("library_path was not defined");
+        return None
+    }
+    let cat_path_value = cat_path.unwrap();
+    println!("library_path = {}", cat_path_value);
+    let cat_parent = Path::new(&cat_path_value).parent();
+    if cat_parent.is_none()
+    {
+        return None;
+    }
+    let cat_directory = cat_parent.unwrap();
+    let preview_glob = glob(cat_directory.join("*Previews*/previews.db").to_str().unwrap());
+    if !preview_glob.is_ok() {
+        return None
+    }
+
+    let preview_paths = preview_glob.unwrap();
+    for entry in preview_paths {
+        if let Ok(candidate_preview_path) = entry {
+            println!("candidate_preview_path = {}", candidate_preview_path.display());
+            return Some(candidate_preview_path.into_os_string().into_string().unwrap());
+        }
+    }
+    return None
+}
+
 fn find_configuration()  {
     let app_data_result = env::var("APPDATA");
     if !app_data_result.is_ok() {
@@ -100,17 +204,29 @@ fn find_configuration()  {
         }
     }
 
+    let preview_glob = glob(cat_directory.join("*Previews*/previews.db").to_str().unwrap());
+    if !preview_glob.is_ok() {
+        return
+    }
+
+    let preview_paths = preview_glob.unwrap();
+    for entry in preview_paths {
+        if let Ok(candidate_preview_path) = entry {
+            println!("candidate_preview_path = {}", candidate_preview_path.display());
+        }
+    }
 
 }
 
 #[tauri::command]
-fn get_image_for_id() {
+fn get_image_for_id(image_id: String) {
     // I can invoke this, from the frontend, and this code executes properly
     // TODO: need to take an image_id, and map it to the file in the previews
     // TODO: need to return the image to the frontend
     let _image_result = lrprev::get_jpegs_from_file(
         r"C:\Users\andyr\OneDrive\Pictures\8AEF1EC2-56E1-4628-A4B5-E5DE6944D6FD-46674b86598837cc1969a390cec94d22.lrprev"
     );
+    println!("called with {}", image_id)
     /*
     if image_result.is_ok() {
         let loaded_images = image_result.unwrap();
@@ -165,8 +281,17 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_system_info::init())
         .setup(|app| {
-            let _ = find_configuration();
+            let mut state = AppState{
+                image_id_to_image: HashMap::new()
+            };
 
+            let _ = find_configuration();
+            let preview_db_path = get_preview_db_path();
+            if preview_db_path.is_some() {
+                // TODO: BLOCKING IS BAD
+                // block_on(do_sql(&preview_db_path.unwrap()));
+                block_on(do_sql(&preview_db_path.unwrap(), &mut state));
+            }
             // allowed the given directory
             // allow_all_ascii_drives(app);
             allow_detected_drives(app);
