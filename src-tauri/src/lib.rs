@@ -18,6 +18,7 @@ use tauri::Manager;
 mod lrprev;
 
 struct AppState {
+    conf_dirs: ConfDirs,
     image_id_to_image: HashMap<u64, PreviewData>
 }
 
@@ -25,15 +26,6 @@ fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where P: AsRef<Path>, {
     let file = File::open(filename)?;
     Ok(io::BufReader::new(file).lines())
-}
-
-#[tauri::command]
-fn download(app: AppHandle, url: String) {
-  app.emit("download-started", &url).unwrap();
-  for progress in [1, 15, 50, 80, 100] {
-    app.emit("download-progress", progress).unwrap();
-  }
-  app.emit("download-finished", &url).unwrap();
 }
 
 fn get_library_path_from_config_file(adobe_config_path: &str) -> Result<String, ()>
@@ -79,20 +71,6 @@ struct PreviewData {
     orientation: Option<String>,
 }
 
-fn get_image_id_mapping()
-{
-    let preview_db_path = get_preview_db_path();
-    if !preview_db_path.is_some()
-    {
-        unimplemented!()
-    }
-    // let connect_uri = "sqlite://".to_owned() + &preview_db_path.unwrap();
-    // let connection = SqliteConnectOptions::from_str(connect_uri)?
-    //    .read_only(true)
-    //    .connect();
-    // todo; finish this line of thought to populate the db this might all have to happen on setup
-}
-
 async fn do_sql(preview_db_path: &str) -> HashMap<u64, PreviewData>
 {
     let connection = SqliteConnectOptions::new()
@@ -114,19 +92,6 @@ async fn do_sql(preview_db_path: &str) -> HashMap<u64, PreviewData>
                 orientation: image.orientation
             });
         }
-        //let imageIdToImage = qr.into_iter().map(|image| (image.imageId as u64, image)).collect::<HashMap<_, _>>();
-        // let uuidToImage = imageIdToImage.iter().map(|(imp)|(imp.1.uuid.clone(), imp.1)).collect::<HashMap<_,_>>();
-        // for (imageId, image) in imageIdToImage.iter()
-        // {
-        //     
-        //     let disp = format!("uuid = {}, orientation = {}, digest = {}",
-        //        image.uuid,
-        //        image.orientation.clone().unwrap_or("".to_owned()),
-        //        image.digest
-        //     );
-        //     println!("imageId {} and image {}", imageId, disp);
-        // }
-        // println!("lenq {}", imageIdToImage.len());
     }
     else {
         println!("{}", "all is not wel");
@@ -134,7 +99,15 @@ async fn do_sql(preview_db_path: &str) -> HashMap<u64, PreviewData>
     return image_id_to_image;
 }
 
-fn get_preview_db_path() -> Option<String> {
+struct ConfDirs {
+    root: String,
+    cat_path: String,
+    metadata_db_path: String,
+    preview_db_path: String,
+    preview_root: String
+}
+
+fn find_configuration() -> Option<ConfDirs> {
     let app_data_result = env::var("APPDATA");
     if !app_data_result.is_ok() {
         println!("{}", "unimp 1");
@@ -147,7 +120,7 @@ fn get_preview_db_path() -> Option<String> {
     let cat_path = get_library_path_from_config_file(&expected_adobe_prefs);
     if !cat_path.is_ok() {
         println!("library_path was not defined");
-        return None
+        return None;
     }
     let cat_path_value = cat_path.unwrap();
     println!("library_path = {}", cat_path_value);
@@ -157,87 +130,102 @@ fn get_preview_db_path() -> Option<String> {
         return None;
     }
     let cat_directory = cat_parent.unwrap();
-    let preview_glob = glob(cat_directory.join("*Previews*/previews.db").to_str().unwrap());
-    if !preview_glob.is_ok() {
-        return None
-    }
-
-    let preview_paths = preview_glob.unwrap();
-    for entry in preview_paths {
-        if let Ok(candidate_preview_path) = entry {
-            println!("candidate_preview_path = {}", candidate_preview_path.display());
-            return Some(candidate_preview_path.into_os_string().into_string().unwrap());
-        }
-    }
-    return None
-}
-
-fn find_configuration()  {
-    let app_data_result = env::var("APPDATA");
-    if !app_data_result.is_ok() {
-        println!("{}", "unimp 1");
-        unimplemented!();
-    }
-
-    let app_data_dir = app_data_result.unwrap();
-    let preferences_relpath = "Adobe/Lightroom/Preferences/Lightroom Classic CC 7 Preferences.agprefs";  
-    let expected_adobe_prefs = app_data_dir + "/" + preferences_relpath;
-    let cat_path = get_library_path_from_config_file(&expected_adobe_prefs);
-    if !cat_path.is_ok() {
-        println!("library_path was not defined");
-        return
-    }
-    let cat_path_value = cat_path.unwrap();
-    println!("library_path = {}", cat_path_value);
-    let cat_parent = Path::new(&cat_path_value).parent();
-    if cat_parent.is_none()
-    {
-        return;
-    }
-    let cat_directory = cat_parent.unwrap();
     // todo: I'm a bit lazy here, forcing the path to unwrap
     let helper_glob = glob(cat_directory.join("**/metadatahelper.db").to_str().unwrap());
     if !helper_glob.is_ok() {
-        return
+        return None;
     }
     let helper_paths = helper_glob.unwrap();
+    let mut metadata_db_path : Option<String> = None;
     for entry in helper_paths {
         if let Ok(candidate_metadata_path) = entry {
             println!("candidate_metadata_path = {}", candidate_metadata_path.display());
+            metadata_db_path = Some(candidate_metadata_path.into_os_string().into_string().unwrap());
         }
     }
 
     let preview_glob = glob(cat_directory.join("*Previews*/previews.db").to_str().unwrap());
     if !preview_glob.is_ok() {
-        return
+        return None;
     }
 
     let preview_paths = preview_glob.unwrap();
+    let mut preview_db_path : Option<String> = None;
     for entry in preview_paths {
         if let Ok(candidate_preview_path) = entry {
             println!("candidate_preview_path = {}", candidate_preview_path.display());
+            preview_db_path = Some(candidate_preview_path.into_os_string().into_string().unwrap());
         }
     }
 
+    let preview_db_path_value : String = preview_db_path.unwrap();
+    let preview_root = Path::new(&preview_db_path_value).parent().unwrap().to_str().unwrap().to_owned();
+
+    return Some(ConfDirs{
+        root: cat_directory.to_str().unwrap().to_owned(),
+        cat_path: cat_path_value,
+        metadata_db_path: metadata_db_path.unwrap(),
+        preview_db_path: preview_db_path_value,
+        preview_root: preview_root
+    })
+
+}
+
+fn format_preview_filepath(preview_root: &str, image: &PreviewData) -> String
+{
+    return Path::new(&preview_root).join(
+        &image.uuid[0 .. 1]
+    ).join(
+        &image.uuid[0 .. 4]
+    ).join(
+        image.uuid.clone() + "-" + &image.digest + ".lrprev"
+    ).as_os_str().to_str().unwrap().to_owned();
 }
 
 #[tauri::command]
-fn get_image_for_id(image_id: String) {
+fn get_preview_path_for_image_id(state: tauri::State<AppState>, image_id: &str) -> Option<String>
+{
+
+    // fixme: this code needs to handle errors!
+    let image_id_int = image_id.parse::<u64>();
+    if !image_id_int.is_ok() {
+        return None;
+    }
+    let maybe_image = state.image_id_to_image.get(&image_id_int.unwrap());
+    if !maybe_image.is_some() {
+        println!("{}", "couldnt find image");
+        return None;
+    }
+
+    return Some(format_preview_filepath(&state.conf_dirs.preview_root, maybe_image.unwrap()));
+    
+}
+
+#[tauri::command]
+fn get_image_for_id(state: tauri::State<AppState>, image_id: String) {
     // I can invoke this, from the frontend, and this code executes properly
     // TODO: need to take an image_id, and map it to the file in the previews
     // TODO: need to return the image to the frontend
-    let _image_result = lrprev::get_jpegs_from_file(
-        r"C:\Users\andyr\OneDrive\Pictures\8AEF1EC2-56E1-4628-A4B5-E5DE6944D6FD-46674b86598837cc1969a390cec94d22.lrprev"
+    
+    // fixme: this code needs to handle errors!
+    let preview_path = get_preview_path_for_image_id( state, &image_id );
+    let pps = preview_path.unwrap();
+    let image_result = lrprev::get_jpegs_from_file(
+        &pps    
     );
-    println!("called with {}", image_id)
-    /*
+    println!("called with {}", image_id);
+    println!("preview={}", pps);
+    
     if image_result.is_ok() {
         let loaded_images = image_result.unwrap();
         for im in loaded_images {
             let _ = im.save("dumped_im.jpeg");
         }
     }
-    */
+    else {
+        println!("failed to load images");
+    }
+    
 }
 
 #[tauri::command]
@@ -284,19 +272,14 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_system_info::init())
         .setup(|app| {
-            let _ = find_configuration();
-            let preview_db_path = get_preview_db_path();
-            if preview_db_path.is_some() {
-                // TODO: BLOCKING IS BAD
-                // block_on(do_sql(&preview_db_path.unwrap()));
-                let image_id_to_image = block_on(do_sql(&preview_db_path.unwrap()));
-                app.manage(AppState{
-                    image_id_to_image: image_id_to_image
-                });
-            }
-            else {
-                unimplemented!();
-            }
+            let conf_dirs = find_configuration().unwrap();
+            // TODO: BLOCKING IS BAD
+            // block_on(do_sql(&preview_db_path.unwrap()));
+            let image_id_to_image = block_on(do_sql(&conf_dirs.preview_db_path));
+            app.manage(AppState{
+                conf_dirs: conf_dirs,
+                image_id_to_image: image_id_to_image
+            });
             // allowed the given directory
             // allow_all_ascii_drives(app);
             allow_detected_drives(app);
