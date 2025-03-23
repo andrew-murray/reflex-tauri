@@ -6,10 +6,6 @@ import Skeleton from '@mui/material/Skeleton';
 // polyfill for toBase64
 import "core-js/modules/esnext.uint8-array.to-base64.js";
 
-// FIXME: This needs to migrate to tauri
-// there's a dialog that would support this
-// https://v1.tauri.app/v1/api/js/dialog/#open
-
 export default function AsyncImageFromFile({src, imageStyle, width, height})
 {
   const [imgState, setImageState] = React.useState(null);
