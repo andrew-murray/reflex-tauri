@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Box } from "@mui/material";
+import Button from '@mui/material/Button';
+import Rating from '@mui/material/Rating';
+import Typography from '@mui/material/Typography';
 import TableUI from "./TableUI";
 import StaticColumnDefs from "./StaticColumnDefs";
 
@@ -7,27 +10,77 @@ import StaticColumnDefs from "./StaticColumnDefs";
 // I presume it's due to the filepath/lens? overflowing the line
 // this is annoying, how best to fix this?
 
-const makeColumns = (columnKeys) => {
-    return columnKeys.map(k => {
-        return Object.assign(
+// invoke_load(image_id);
+
+const makeColumns = (onSelectImageIndex) =>
+{
+    // we're going to do custom things with these!
+    // assert(StaticColumnDefs[0].accessorKey === "com_adobe_absoluteFilepath");
+    // assert(StaticColumnDefs[2].accessorKey === "com_adobe_rating");
+
+    let defs = [...StaticColumnDefs];
+    defs[0] = Object.assign(
+        {},
+        defs[0],
+        {cell : ({cell, row}) => {
+            console.log("clicked");
+            console.log(row.original);
+            const path = row.original["com_adobe_absoluteFilepath"];
+            const image_id = row.original["imageid"];
+            // fixme: tooltip just doesn't cut it, I can't customise it in the way I want
+            // but https://mui.com/material-ui/react-popover/ 
+            // is what I want ... but it probably needs a custom component in its own file, see OnHoverImage.jsx
+            return <Button onClick={()=>{
+                console.log("selected image index " + row.index.toString());
+                onSelectImageIndex(row.index);
+            }}>
+                <Typography>
+                    {path}
+                </Typography>
+            </Button>
+        }}
+    );
+
+    defs[2] = Object.assign(
+        {},
+        defs[2],
+        {cell : ({ cell, row }) => {
+            const ratingVal = row.original["com_adobe_rating"];
+            // note that: it's quite hard to see the "disabled" rating in action
+            // There are some on page-13 of my normal manual-test-data (if page-size=50)
+            // In folder "20230923 Walk about Town - Wabi Sabi"
+            return <Rating
+                value={ ratingVal === "" ? 0 : ratingVal}
+                readOnly
+                disabled={ratingVal === "" ? true : undefined}
+            />
+        }}
+    );
+
+    for (let i = 0; i < defs.length; ++i)
+    {
+        const k = defs[i].accessorKey;
+        if(i === 0){ continue; }
+        if(i === 2){ continue; }
+        defs[i] = Object.assign(
+            {},
             {
-                header: k,
                 cell: ({ cell, row }) => {
                     return <div style={{minWidth:"7vw"}}>{row.original[k]}</div>;
                 }
             },
-            // we assume there's precisely one
-            // it may override header/cell/other attributes!
-            StaticColumnDefs.filter(d => d.accessorKey === k)[0]
-        )
-    });
+            defs[i]
+        );
+    }
+
+    return defs;
 };
 
 // For pagination, define maximum of data per page
 
 const ITEMS_PER_PAGE = 50;
 
-const StaffTable = ({images, filteredImages, filtersByMetric, onSelectMetric, onSetFiltersForMetric}) => {
+const StaffTable = ({images, filteredImages, filtersByMetric, onSelectMetric, onSetFiltersForMetric, onSelectImageIndex}) => {
 
   // Initiate your states
     const [loading, setLoading] = useState(false);
@@ -62,8 +115,7 @@ const StaffTable = ({images, filteredImages, filtersByMetric, onSelectMetric, on
     });
 
     const Columns = React.useMemo( () => {
-            const selectedColumnKeys = StaticColumnDefs.map(d => d.accessorKey);
-            const Columns = makeColumns(selectedColumnKeys);
+            const Columns = makeColumns(onSelectImageIndex);
             return Columns;
         },
         []
@@ -90,6 +142,8 @@ const StaffTable = ({images, filteredImages, filtersByMetric, onSelectMetric, on
 
                     onSelectMetric={onSelectMetric}
                     onSetFiltersForMetric={onSetFiltersForMetric}
+
+                    onSelectImageIndex={onSelectImageIndex}
                 />
             </Box>
         </section>

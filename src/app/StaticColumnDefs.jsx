@@ -1,6 +1,3 @@
-import Rating from '@mui/material/Rating';
-import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
 import { invoke } from "@tauri-apps/api/core";
 
 // todo: to see the consequences of this, I'll need to make StaticColumnDefs a factory
@@ -16,21 +13,7 @@ const StaticColumnDefs = [
         accessorKey:"com_adobe_absoluteFilepath",
         header: "Path",
         filterable: false,
-        plottable: false,
-        cell: ({cell, row}) => {
-            console.log("clicked");
-            console.log(row.original);
-            const path = row.original["com_adobe_absoluteFilepath"];
-            const image_id = row.original["imageid"];
-            // fixme: tooltip just doesn't cut it, I can't customise it in the way I want
-            // but https://mui.com/material-ui/react-popover/ 
-            // is what I want ... but it probably needs a custom component in its own file, see OnHoverImage.jsx
-            return <Button onClick={()=>{invoke_load(image_id);}}>
-                <Typography>
-                    {path}
-                </Typography>
-            </Button>
-        }
+        plottable: false
     },
     {
         accessorKey:"com_adobe_folder",
@@ -41,17 +24,6 @@ const StaticColumnDefs = [
     {
         accessorKey:"com_adobe_rating",
         header: "Rating",
-        cell: ({ cell, row }) => {
-            const ratingVal = row.original["com_adobe_rating"];
-            // note that: it's quite hard to see the "disabled" rating in action
-            // There are some on page-13 of my normal manual-test-data (if page-size=50)
-            // In folder "20230923 Walk about Town - Wabi Sabi"
-            return <Rating
-                value={ ratingVal === "" ? 0 : ratingVal}
-                readOnly
-                disabled={ratingVal === "" ? true : undefined}
-            />
-        },
         filterable: true,
         plottable: true
     },

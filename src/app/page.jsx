@@ -4,6 +4,7 @@ import AsyncFileImport from "./AsyncFileImport"
 import React from 'react'
 import DataTable from "./DataTable"
 import GraphPanel from "./GraphPanel"
+import TempLightboxDialog from "./TempLightboxDialog"
 import NavDrawer from "./NavDrawer"
 import WaitingMessage from "./WaitingMessage"
 import GraphDialog from "./GraphDialog"
@@ -157,6 +158,7 @@ export default function Home() {
   const [filesystemFilters, setFilesystemFilters] = React.useState([]);
   const [filtersByMetric, setFiltersByMetric] = React.useState({});
   const [metricsToPlot, setMetricsToPlot] = React.useState([]);
+  const [activeImageIndex, setActiveImageIndex] = React.useState(null);
 
   const [logMode, setLogMode] = React.useState(false);
   const [ratingsToGraph, setRatingsToGraph] = React.useState(null);
@@ -444,6 +446,8 @@ export default function Home() {
 
                   onSelectMetric={selectMetric}
                   onSetFiltersForMetric={onSetFiltersForMetric}
+
+                  onSelectImageIndex={(i)=>{setActiveImageIndex(i);}}
                 />
               }
               {(!inProgress && images.length === 0) && <AsyncFileImport 
@@ -466,6 +470,14 @@ export default function Home() {
             color={ColorPalette[ index % ColorPalette.length]}
           />
         })}
+        {
+          activeImageIndex !== null && <TempLightboxDialog
+            images={filteredImageState.filteredImages}
+            activeImageIndex={activeImageIndex}
+            setActiveImageIndex={setActiveImageIndex}
+            onClose={()=>{setActiveImageIndex(null);}}
+          />
+        }
       </Box>
     </React.Fragment>
   );

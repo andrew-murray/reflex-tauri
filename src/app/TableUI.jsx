@@ -64,7 +64,7 @@ export const StyledPagination = styled(Pagination)`
     margin-top: 1rem;
 `;
 
-export function FilterDialog({images, filteredImages, metricKey, filtersForMetric, handleClose, onSetFiltersForMetric}) {
+export function FilterDialog({images, filteredImages, metricKey, filtersForMetric, handleClose, onSetFiltersForMetric, onSelectImageIndex}) {
 
   let title = metricKey;
   const matchedColumn = StaticColumnDefs.filter(c => c.accessorKey === metricKey)[0];
