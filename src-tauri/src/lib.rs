@@ -1,9 +1,8 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-use tauri::{AppHandle, Emitter, ipc::Response};
-use anyhow::{Result, Error};
+use tauri::{ipc::Response};
+use anyhow::{Result};
 use tauri_plugin_fs::FsExt;
 use std::env;
-use std::fmt;
 use std::fs;
 use std::fs::File;
 use std::io::{self, BufRead};
@@ -17,7 +16,7 @@ use sqlx::sqlite::{SqliteConnectOptions};
 use std::collections::HashMap;
 use futures::executor::block_on;
 use tauri::Manager;
-use base64::prelude::*;
+use serde::{Serialize, Serializer};
 mod lrprev;
 
 struct AppState {
@@ -204,9 +203,37 @@ fn get_preview_path_for_image_id(state: tauri::State<AppState>, image_id: &str) 
     
 }
 
+// this is pinched from tauri-fs's implementation
+
+#[derive(Debug, thiserror::Error)]
+pub enum ReflexCommandError {
+    #[error(transparent)]
+    Anyhow(#[from] anyhow::Error)
+}
+
+impl From<&str> for ReflexCommandError {
+    fn from(value: &str) -> Self {
+        Self::Anyhow(anyhow::anyhow!(value.to_string()))
+    }
+}
+
+impl Serialize for ReflexCommandError {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        if let Self::Anyhow(err) = self {
+            serializer.serialize_str(format!("{err:#}").as_ref())
+        } else {
+            serializer.serialize_str(self.to_string().as_ref())
+        }
+    }
+}
+pub type CommandResult<T> = std::result::Result<T, ReflexCommandError>;
+
 
 #[tauri::command]
-fn get_image_for_id(state: tauri::State<AppState>, image_id: String, mode: String) -> Result<String, String> {
+fn get_image_for_id(state: tauri::State<AppState>, image_id: String, mode: String) -> CommandResult<tauri::ipc::Response> {
     // I can invoke this, from the frontend, and this code executes properly
     // TODO: need to take an image_id, and map it to the file in the previews
     // TODO: need to return the image to the frontend
@@ -214,7 +241,7 @@ fn get_image_for_id(state: tauri::State<AppState>, image_id: String, mode: Strin
     // fixme: this code needs to handle errors!
     let preview_path = get_preview_path_for_image_id( state, &image_id );
     let pps = preview_path.unwrap();
-    let image_result = lrprev::get_jpegs_from_file(
+    let image_result = lrprev::get_jpeg_byte_segments_from_file(
         &pps    
     );
     println!("called with {}", image_id);
@@ -222,33 +249,36 @@ fn get_image_for_id(state: tauri::State<AppState>, image_id: String, mode: Strin
     
     if image_result.is_ok() {
         println!("{}", "image_result_ok");
-        let loaded_images = image_result.unwrap();
-        println!("images loaded {}", loaded_images.len().to_string());
+        let loaded_image_bytes = image_result.unwrap();
+        println!("images loaded {}", loaded_image_bytes.len().to_string());
+        // for im in &loaded_image {
+        //    let _ = im.save("dumped_im.jpeg");
+        // }
         if mode == "hi"
         {
             println!("{}", "returning first");
-            // return tauri::ipc::Response::new(loaded_images[0].as_bytes().to_vec());
-            return Ok(BASE64_STANDARD.encode(loaded_images[0].as_bytes()));
+            let bytes : Vec<u8> = loaded_image_bytes.get(0).unwrap().to_owned();
+            return Ok(Response::new(bytes));
+            // return Ok(loaded_images[0].as_bytes().to_vec());
         }
         if mode == "lo"
         {
             println!("{}", "returning last");
+            let bytes = loaded_image_bytes.get(loaded_image_bytes.len() - 1).unwrap().to_owned();
             // return tauri::ipc::Response::new(loaded_images[loaded_images.len() - 1].as_bytes().to_vec());
-            return Ok(BASE64_STANDARD.encode(loaded_images[loaded_images.len() - 1].as_bytes()));
-
+            return Ok(Response::new(bytes));
         }
         // todo: should we use 
         // return tauri::ipc::Response::new("err");
-        // for im in loaded_images {
-        //     let _ = im.save("dumped_im.jpeg");
-        // }
         println!("{}", "returning err1");
-        return Err("Failed to load image".to_owned());        
+        return Err(ReflexCommandError::from("Failed to load image"));
+        // return Err("Failed to load image".to_owned());
     }
     else {
         println!("{}", "returning err2");
         // return tauri::ipc::Response::new("err");
-        return Err("Failed to load image".to_owned());
+        return Err(ReflexCommandError::from("Failed to load image"));
+        // return Err("Failed to load image".to_owned());
     }
     
 }

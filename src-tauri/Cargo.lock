@@ -4858,6 +4858,7 @@ dependencies = [
  "tauri-plugin-fs",
  "tauri-plugin-opener",
  "tauri-plugin-system-info",
+ "thiserror 2.0.12",
 ]
 
 [[package]]
