@@ -1,7 +1,9 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, ipc::Response};
+use anyhow::{Result, Error};
 use tauri_plugin_fs::FsExt;
 use std::env;
+use std::fmt;
 use std::fs;
 use std::fs::File;
 use std::io::{self, BufRead};
@@ -15,6 +17,7 @@ use sqlx::sqlite::{SqliteConnectOptions};
 use std::collections::HashMap;
 use futures::executor::block_on;
 use tauri::Manager;
+use base64::prelude::*;
 mod lrprev;
 
 struct AppState {
@@ -201,8 +204,9 @@ fn get_preview_path_for_image_id(state: tauri::State<AppState>, image_id: &str) 
     
 }
 
+
 #[tauri::command]
-fn get_image_for_id(state: tauri::State<AppState>, image_id: String) {
+fn get_image_for_id(state: tauri::State<AppState>, image_id: String, mode: String) -> Result<String, String> {
     // I can invoke this, from the frontend, and this code executes properly
     // TODO: need to take an image_id, and map it to the file in the previews
     // TODO: need to return the image to the frontend
@@ -217,13 +221,34 @@ fn get_image_for_id(state: tauri::State<AppState>, image_id: String) {
     println!("preview={}", pps);
     
     if image_result.is_ok() {
+        println!("{}", "image_result_ok");
         let loaded_images = image_result.unwrap();
-        for im in loaded_images {
-            let _ = im.save("dumped_im.jpeg");
+        println!("images loaded {}", loaded_images.len().to_string());
+        if mode == "hi"
+        {
+            println!("{}", "returning first");
+            // return tauri::ipc::Response::new(loaded_images[0].as_bytes().to_vec());
+            return Ok(BASE64_STANDARD.encode(loaded_images[0].as_bytes()));
         }
+        if mode == "lo"
+        {
+            println!("{}", "returning last");
+            // return tauri::ipc::Response::new(loaded_images[loaded_images.len() - 1].as_bytes().to_vec());
+            return Ok(BASE64_STANDARD.encode(loaded_images[loaded_images.len() - 1].as_bytes()));
+
+        }
+        // todo: should we use 
+        // return tauri::ipc::Response::new("err");
+        // for im in loaded_images {
+        //     let _ = im.save("dumped_im.jpeg");
+        // }
+        println!("{}", "returning err1");
+        return Err("Failed to load image".to_owned());        
     }
     else {
-        println!("failed to load images");
+        println!("{}", "returning err2");
+        // return tauri::ipc::Response::new("err");
+        return Err("Failed to load image".to_owned());
     }
     
 }

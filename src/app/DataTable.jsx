@@ -23,8 +23,8 @@ const makeColumns = (onSelectImageIndex) =>
         {},
         defs[0],
         {cell : ({cell, row}) => {
-            console.log("clicked");
-            console.log(row.original);
+            //console.log("clicked");
+            // console.log(row.original);
             const path = row.original["com_adobe_absoluteFilepath"];
             const image_id = row.original["imageid"];
             // fixme: tooltip just doesn't cut it, I can't customise it in the way I want
