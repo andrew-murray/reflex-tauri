@@ -58,25 +58,6 @@ export default function GraphDialog({images, metricKey, handleClose, color}) {
     title = matchedColumn.header;
   }
   const [graphMode, setGraphMode] = React.useState(GraphModeEnum.Pie);
-  /*
-
-
-    <DialogContent style={{width: 500, height: 500, padding: 10}}>
-      {graphMode === GraphModeEnum.Bar && 
-        <Graphs.BarGraphForDialog
-          data={images}
-          dataKey={metricKey}
-          color={color}
-        />
-      }
-      {graphMode === GraphModeEnum.Pie &&
-        <Graphs.PieGraph
-          data={images}
-          dataKey={metricKey}
-          color={color}
-        />
-      }
-      */
   return <Dialog
     open={true}
     onClose={handleClose}
@@ -96,11 +77,20 @@ export default function GraphDialog({images, metricKey, handleClose, color}) {
       />
     </DialogTitle>
     <DialogContent style={{width: 500, height: 500, padding: 10}}>
-      <AsyncImageFromFile 
-        src={images[images.length - 10]["com_adobe_absoluteFilepath"].replace(".CR2", ".jpg")}
-        width={"100%"}
-        height={"100%"}
-      />
+      {graphMode === GraphModeEnum.Bar && 
+        <Graphs.BarGraphForDialog
+          data={images}
+          dataKey={metricKey}
+          color={color}
+        />
+      }
+      {graphMode === GraphModeEnum.Pie &&
+        <Graphs.PieGraph
+          data={images}
+          dataKey={metricKey}
+          color={color}
+        />
+      }
     </DialogContent>
   </Dialog>
 };
