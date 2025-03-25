@@ -16,6 +16,7 @@ import {
 import {pathsep} from "./defs"
 import {metadata} from "./LightroomDB"
 import useScript from "./useScript"
+import { readFile } from '@tauri-apps/plugin-fs';
 
 const MainMinusDrawer = styled(
   'main', 
@@ -162,10 +163,7 @@ export default function Home() {
 
   const [logMode, setLogMode] = React.useState(false);
   const [ratingsToGraph, setRatingsToGraph] = React.useState(null);
-
-  const handleFileStartImport = () => {
-      setInProgress(true);
-  };
+  const [metadataDBPath, setMetadataDBPath] = React.useState(null);
 
   const folderData = React.useMemo( ()=> {
       return computeFolderAndFilesystemPathsFromImages(images);
@@ -189,34 +187,66 @@ export default function Home() {
     async: true
   });
 
-  const handleFileImport = (e) => {
-    if(SQL)
-    {
-      const byte_buffer = e.content; // new Uint8Array(e.content);
-      const localDB = new SQL.Database(byte_buffer);
-      setDB(localDB);
-      window.sql = SQL;
-      window.db = localDB;
-      // TODO: if I'm going to pull the data across in chunks,
-      // perhaps I should cache computation in chunks as well?
-      const maxLimit = 50000;
-      const chunkLength = 5000;
-      for (let currentTotal = 0; currentTotal < maxLimit; currentTotal += chunkLength)
-      {
-        const metadataChunk = metadata.queries.select.images(localDB, chunkLength, currentTotal);
-        setImages( prevImages => prevImages.concat(metadataChunk));
-        if(metadataChunk.length < chunkLength)
+  const handleMetadataFilepath = React.useCallback(
+    (filepath) => {
+      console.log(`setting filepath ${filepath}`);
+      setMetadataDBPath(filepath);
+    },
+    []
+  );
+  const handleMetadataFileImport = React.useEffect(
+    () => {
+      let mounted = true;
+      const awaitable = async () => {
+        // this callback isn't super-faithful with it's use of the mounted variable
+        if (mounted === false)
         {
-          break;
+          return;
         }
-      }
-      setInProgress(false);
-    }
-    else
-    {
-      console.log("SQL not available");
-    }
-  }
+        if (metadataDBPath === null)
+        {
+          setImages([]);
+          return;
+        }
+        if(SQL)
+        {
+          setInProgress(true); 
+          const blob = await readFile(
+            metadataDBPath
+          );
+          const localDB = new SQL.Database(blob);
+          setDB(localDB);
+          // TODO: exception handling in the below?
+          // Should the below be a separate callback?
+          // TODO: if I'm going to pull the data across in chunks,
+          // perhaps I should cache computation in chunks as well?
+          const maxLimit = 50000;
+          const chunkLength = 5000;
+          for (let currentTotal = 0; currentTotal < maxLimit; currentTotal += chunkLength)
+          {
+            const metadataChunk = metadata.queries.select.images(localDB, chunkLength, currentTotal);
+            setImages( prevImages => prevImages.concat(metadataChunk));
+            if(metadataChunk.length < chunkLength)
+            {
+              break;
+            }
+          }
+          setInProgress(false);
+        }
+        else
+        {
+          // if we ever hit this, we need to do some refactoring to have better error behaviour!
+          console.error("SQL not available");
+          setImages([]);
+        }
+      };
+      awaitable(); 
+      return ()=>{
+        mounted = false;
+      };
+    },
+    [metadataDBPath]
+  )
   const handleDrawerClose = React.useCallback( 
     ()=> {
       setNavOpen(false);
@@ -451,8 +481,7 @@ export default function Home() {
                 />
               }
               {(!inProgress && images.length === 0) && <AsyncFileImport 
-                onStartImport={handleFileStartImport}
-                onImport={handleFileImport}
+                onImport={handleMetadataFilepath}
               />}
               {inProgress && <WaitingMessage />}
         </div>

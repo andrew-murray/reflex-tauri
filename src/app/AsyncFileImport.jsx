@@ -7,12 +7,7 @@
 
 import React from 'react'
 import Button from '@mui/material/Button';
-import { readFile, BaseDirectory } from '@tauri-apps/plugin-fs';
 import { open } from '@tauri-apps/plugin-dialog';
-
-// FIXME: This needs to migrate to tauri
-// there's a dialog that would support this
-// https://v1.tauri.app/v1/api/js/dialog/#open
 
 export default function AsyncFileImport({onImport, onStartImport, accept, buttonProps})
 {
@@ -31,19 +26,7 @@ export default function AsyncFileImport({onImport, onStartImport, accept, button
     }
     else
     {
-      if (onStartImport) {
-        onStartImport();
-      }
-      const blob = await readFile(
-        selected
-      );
-      if(onImport)
-      {
-        onImport(
-        {
-          file: selected, content: blob
-        });
-      }
+      onImport(selected);
     }
   };
 
