@@ -7,10 +7,9 @@ import Skeleton from '@mui/material/Skeleton';
 import "core-js/modules/esnext.uint8-array.to-base64.js";
 import { invoke } from '@tauri-apps/api/core';
 
-export default function AsyncImageFromApi({image, imageStyle, width, height})
+export default function AsyncImageFromApi({image, imageStyle, orientation, width, height})
 {
   const [imgState, setImageState] = React.useState(null);
-  const [orientation, setOrientation] = React.useState(0);
   React.useEffect(
     () => {
       let mounted = true;
@@ -36,13 +35,11 @@ export default function AsyncImageFromApi({image, imageStyle, width, height})
     [image]
   );
 
+  // TODO: It's not clear this is sufficient, I could set up a test-set?
   const oClassMap = {
-    0: undefined,
-    90: "rotate90",
-    180: "rotate180",
-    270: "rotate270"
+    "AB": undefined,
+    "BC": "rotate90"
   };
-
   const oClass = oClassMap[orientation];
 
   return <React.Fragment>

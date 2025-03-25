@@ -163,3 +163,24 @@ export const metadata = {
     }
   }
 };
+
+export const preview = {
+  "queries": {
+    "select": {
+      "cache": (db, limit, offset) => {
+        return genericSelect(
+          db, 
+          "ImageCacheEntry",
+          [
+            "imageId",
+            // "uuid", // we won't use this entry
+            // "digest", // we won't use this entry
+            "orientation"
+          ],
+          limit,
+          offset
+        )
+      }
+    }
+  }
+};

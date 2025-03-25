@@ -14,7 +14,7 @@ import {
     Box
 } from "@mui/material";
 import {pathsep} from "./defs"
-import {metadata} from "./LightroomDB"
+import {metadata, preview} from "./LightroomDB"
 import useScript from "./useScript"
 import { readFile } from '@tauri-apps/plugin-fs';
 import { invoke } from '@tauri-apps/api/core';
@@ -165,6 +165,9 @@ export default function Home() {
   const [logMode, setLogMode] = React.useState(false);
   const [ratingsToGraph, setRatingsToGraph] = React.useState(null);
   const [metadataDBPath, setMetadataDBPath] = React.useState(null);
+  const [previewDBPath, setPreviewDBPath] = React.useState(null);
+  const [previewDB, setPreviewDB] = React.useState(null);
+  const [imageToOrientation, setImageToOrientation] = React.useState(null);
 
   const folderData = React.useMemo( ()=> {
       return computeFolderAndFilesystemPathsFromImages(images);
@@ -189,10 +192,49 @@ export default function Home() {
   });
   const handleMetadataFilepath = React.useCallback(
     (filepath) => {
-      console.log(`setting filepath ${filepath}`);
       setMetadataDBPath(filepath);
     },
     []
+  );
+  const handlePreviewDBFileImport = React.useEffect(
+    () => {
+      let mounted = true;
+      const awaitable = async () => {
+        // this callback isn't super-faithful with it's use of the mounted variable
+        if (mounted === false)
+        {
+          return;
+        }
+        if (previewDBPath === null)
+        {
+          // todo: set something?
+          setPreviewDB(null);
+          return;
+        }
+        if(SQL)
+        {
+          const blob = await readFile(
+            previewDBPath
+          );
+          const localPreviewDB = new SQL.Database(blob);
+          setPreviewDB(localPreviewDB);
+          // we don't set limit, offset as we reckon we can slurp the db in one pass
+          const entries = preview.queries.select.cache(localPreviewDB);
+          const orientationMap = Object.fromEntries(entries.map( e => [e.imageId, e.orientation]));
+          setImageToOrientation(orientationMap);
+        }
+        else
+        {
+          // if we ever hit this, we need to do some refactoring to have better error behaviour!
+          console.error("SQL not available");
+        }
+      };
+      awaitable(); 
+      return ()=>{
+        mounted = false;
+      };
+    },
+    [previewDBPath]
   );
   const handleMetadataFileImport = React.useEffect(
     () => {
@@ -246,7 +288,7 @@ export default function Home() {
       };
     },
     [metadataDBPath]
-  )
+  );
   const fetchMetadataPath = React.useEffect(
       ()=>{
         let mounted = true;
@@ -257,6 +299,7 @@ export default function Home() {
               if(mounted)
               {
                 setMetadataDBPath(response.metadata_db_path);
+                setPreviewDBPath(response.preview_db_path);
               }
             }
           )
@@ -525,6 +568,7 @@ export default function Home() {
             images={filteredImageState.filteredImages}
             activeImageIndex={activeImageIndex}
             setActiveImageIndex={setActiveImageIndex}
+            orientation={imageToOrientation !== null ? imageToOrientation[filteredImageState.filteredImages[activeImageIndex].imageid] : undefined}
             onClose={()=>{setActiveImageIndex(null);}}
           />
         }
