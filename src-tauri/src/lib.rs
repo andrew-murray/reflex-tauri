@@ -370,8 +370,10 @@ pub fn run() {
             // dbg!(scope.allowed());
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![get_image_for_id])
-        .invoke_handler(tauri::generate_handler![get_app_state])
+        .invoke_handler(tauri::generate_handler![
+            get_app_state,
+            get_image_for_id
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
