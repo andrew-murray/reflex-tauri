@@ -195,7 +195,6 @@ fn get_preview_path_for_image_id(state: tauri::State<AppState>, image_id: &str) 
     }
     let maybe_image = state.image_id_to_image.get(&image_id_int.unwrap());
     if !maybe_image.is_some() {
-        println!("{}", "couldnt find image");
         return None;
     }
 
