@@ -33,43 +33,6 @@ fn jpeg_from_bytes(bytes : &[u8], output_jpeg: bool) -> Option<DynamicImage>
     return Some(final_image);
 }
 
-pub fn get_jpegs_from_file(name: &str) -> Result<Vec<DynamicImage>, Box<dyn std::error::Error>> {
-    let data: Vec<u8> = fs::read(name)?;
-    let mut recorded_starts : Vec<usize> = Vec::new();
-    for i in 1 .. 10
-    {
-        let level_s = format!("level_{i}");
-        let level_s_as_bytes = level_s.as_bytes().to_owned();
-        let last_start = recorded_starts.last().unwrap_or(&(0usize)).to_owned();
-        let found_search_term = find_subsequence(&data[last_start..], &level_s_as_bytes);
-        if found_search_term.is_some()
-        {
-            let jpeg_start = last_start + found_search_term.unwrap() + level_s_as_bytes.len() + 1;
-            // println!("js : {} for level: {}", jpeg_start.to_string(), level_s);
-            recorded_starts.push(jpeg_start);
-        }
-        else
-        {
-            // println!("couldn't find : {}", level_s);
-            break;
-        }
-    }
-    let bytes_sequences = (0..recorded_starts.len()).map(|range_index| {
-        if range_index != recorded_starts.len() - 1 {
-            return &data[recorded_starts[range_index]..recorded_starts[range_index + 1]]
-        } else {
-            return &data[recorded_starts[range_index]..]
-        }
-    });
-    let jpegs : Vec<Option<DynamicImage>> = bytes_sequences.map(|s|jpeg_from_bytes(s, false)).collect();
-    let valid_jpegs = jpegs
-        .into_iter()
-        .filter_map(|jpeg| jpeg)
-        .collect::<Vec<DynamicImage>>();
-    // println!("{}", valid_jpegs.len().to_string());
-    return Ok(valid_jpegs);
-}
-
 pub fn get_jpeg_byte_segments_from_file(name: &str) -> Result<Vec<Vec<u8>>, Box<dyn std::error::Error>> {
     let data: Vec<u8> = fs::read(name)?;
     let mut recorded_starts : Vec<usize> = Vec::new();
@@ -82,12 +45,10 @@ pub fn get_jpeg_byte_segments_from_file(name: &str) -> Result<Vec<Vec<u8>>, Box<
         if found_search_term.is_some()
         {
             let jpeg_start = last_start + found_search_term.unwrap() + level_s_as_bytes.len() + 1;
-            // println!("js : {} for level: {}", jpeg_start.to_string(), level_s);
             recorded_starts.push(jpeg_start);
         }
         else
         {
-            // println!("couldn't find : {}", level_s);
             break;
         }
     }
@@ -98,6 +59,23 @@ pub fn get_jpeg_byte_segments_from_file(name: &str) -> Result<Vec<Vec<u8>>, Box<
             return data[recorded_starts[range_index]..].to_vec();
         }
     }).collect();
-    // println!("{}", valid_jpegs.len().to_string());
     return Ok(bytes_sequences);
+}
+
+pub fn get_jpegs_from_file(name: &str) -> Result<Vec<DynamicImage>, Box<dyn std::error::Error>> {
+    let byte_sequence_result = get_jpeg_byte_segments_from_file(name);
+    if byte_sequence_result.is_err()
+    {
+        return Err(byte_sequence_result.err().unwrap());
+    }
+    let byte_sequences = byte_sequence_result.unwrap();
+    let jpegs : Vec<Option<DynamicImage>> = byte_sequences
+        .into_iter()
+        .map(|s|jpeg_from_bytes(&s, false))
+        .collect();
+    let valid_jpegs = jpegs
+        .into_iter()
+        .filter_map(|jpeg| jpeg)
+        .collect::<Vec<DynamicImage>>();
+    return Ok(valid_jpegs);
 }
