@@ -16,7 +16,7 @@ use sqlx::sqlite::{SqliteConnectOptions};
 use std::collections::HashMap;
 use futures::executor::block_on;
 use tauri::Manager;
-use serde::{Serialize, Serializer};
+use serde::{Serialize, Deserialize, Serializer};
 mod lrprev;
 
 struct AppState {
@@ -101,12 +101,25 @@ async fn do_sql(preview_db_path: &str) -> HashMap<u64, PreviewData>
     return image_id_to_image;
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 struct ConfDirs {
     root: String,
     cat_path: String,
     metadata_db_path: String,
     preview_db_path: String,
     preview_root: String
+}
+
+impl Clone for ConfDirs {
+    fn clone(&self) -> Self {
+        ConfDirs{
+            root: self.root.clone(),
+            cat_path: self.cat_path.clone(),
+            metadata_db_path: self.metadata_db_path.clone(),
+            preview_db_path: self.preview_db_path.clone(),
+            preview_root: self.preview_root.clone()
+        }
+    }
 }
 
 fn find_configuration() -> Option<ConfDirs> {
@@ -296,9 +309,10 @@ fn get_image_for_id(state: tauri::State<AppState>, image_id: String, mode: Strin
     
 }
 
+
 #[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
+fn get_app_state(state: tauri::State<AppState>) -> CommandResult<ConfDirs> {
+   return Ok(state.conf_dirs.clone());
 }
 
 static ASCII_LOWER: [char; 26] = [
@@ -354,10 +368,10 @@ pub fn run() {
             // let _ = scope.allow_directory("/", true);
             // fixme: check os?
             // dbg!(scope.allowed());
-
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![get_image_for_id])
+        .invoke_handler(tauri::generate_handler![get_app_state])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

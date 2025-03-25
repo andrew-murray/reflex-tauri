@@ -17,6 +17,7 @@ import {pathsep} from "./defs"
 import {metadata} from "./LightroomDB"
 import useScript from "./useScript"
 import { readFile } from '@tauri-apps/plugin-fs';
+import { invoke } from '@tauri-apps/api/core';
 
 const MainMinusDrawer = styled(
   'main', 
@@ -186,7 +187,6 @@ export default function Home() {
     onLoad: onLoadCallback,
     async: true
   });
-
   const handleMetadataFilepath = React.useCallback(
     (filepath) => {
       console.log(`setting filepath ${filepath}`);
@@ -247,6 +247,27 @@ export default function Home() {
     },
     [metadataDBPath]
   )
+  const fetchMetadataPath = React.useEffect(
+      ()=>{
+        let mounted = true;
+        if(SQL)
+        {
+          invoke("get_app_state").then(
+            (response) => {
+              if(mounted)
+              {
+                setMetadataDBPath(response.metadata_db_path);
+              }
+            }
+          )
+          // TODO: catch here?
+        }
+        return ()=>{ 
+          mounted = false;
+        };
+      },
+      [SQL]
+  );
   const handleDrawerClose = React.useCallback( 
     ()=> {
       setNavOpen(false);
