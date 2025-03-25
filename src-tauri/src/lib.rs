@@ -1,6 +1,6 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use tauri::{ipc::Response};
-use anyhow::{Result};
+use anyhow::{Result, Context};
 use tauri_plugin_fs::FsExt;
 use std::env;
 use std::fs;
@@ -222,6 +222,8 @@ impl Serialize for ReflexCommandError {
     where
         S: Serializer,
     {
+        // TODO: this is currently a warning, because ReflexCommandError is currently *only*
+        // a wrapper around anyhow::Error, this is unlikely to be true forever
         if let Self::Anyhow(err) = self {
             serializer.serialize_str(format!("{err:#}").as_ref())
         } else {
@@ -234,51 +236,63 @@ pub type CommandResult<T> = std::result::Result<T, ReflexCommandError>;
 
 #[tauri::command]
 fn get_image_for_id(state: tauri::State<AppState>, image_id: String, mode: String) -> CommandResult<tauri::ipc::Response> {
-    // I can invoke this, from the frontend, and this code executes properly
-    // TODO: need to take an image_id, and map it to the file in the previews
-    // TODO: need to return the image to the frontend
-    
-    // fixme: this code needs to handle errors!
+    if mode != "hi" && mode != "lo"
+    {
+        return Err(
+            ReflexCommandError::from(
+                anyhow::anyhow!("ArgumentError: mode must be 'hi' or 'lo'")
+                    .context(format!("received {}", mode))
+            )
+        );
+    }
     let preview_path = get_preview_path_for_image_id( state, &image_id );
+    if !preview_path.is_some()
+    {
+
+        return Err(ReflexCommandError::from(
+            anyhow::anyhow!("Preview does not exist")
+                .context(format!("for image_id {}", image_id))
+        ));
+    }
     let pps = preview_path.unwrap();
     let image_result = lrprev::get_jpeg_byte_segments_from_file(
         &pps    
     );
-    println!("called with {}", image_id);
-    println!("preview={}", pps);
-    
     if image_result.is_ok() {
-        println!("{}", "image_result_ok");
         let loaded_image_bytes = image_result.unwrap();
-        println!("images loaded {}", loaded_image_bytes.len().to_string());
-        // for im in &loaded_image {
-        //    let _ = im.save("dumped_im.jpeg");
-        // }
+        if loaded_image_bytes.len() == 0
+        {
+            return Err(
+                ReflexCommandError::from(
+                    anyhow::anyhow!("Found no images in preview file")
+                        .context(format!("for image_id {}", image_id))
+                )
+            );
+        }
         if mode == "hi"
         {
-            println!("{}", "returning first");
             let bytes : Vec<u8> = loaded_image_bytes.get(0).unwrap().to_owned();
             return Ok(Response::new(bytes));
-            // return Ok(loaded_images[0].as_bytes().to_vec());
         }
         if mode == "lo"
         {
-            println!("{}", "returning last");
             let bytes = loaded_image_bytes.get(loaded_image_bytes.len() - 1).unwrap().to_owned();
-            // return tauri::ipc::Response::new(loaded_images[loaded_images.len() - 1].as_bytes().to_vec());
             return Ok(Response::new(bytes));
         }
-        // todo: should we use 
-        // return tauri::ipc::Response::new("err");
-        println!("{}", "returning err1");
-        return Err(ReflexCommandError::from("Failed to load image"));
-        // return Err("Failed to load image".to_owned());
+        return Err(
+            ReflexCommandError::from(
+                anyhow::anyhow!("Failed to provide image (despite image loaded)")
+                    .context(format!("for image_id {}", image_id))
+            )
+        );
     }
     else {
-        println!("{}", "returning err2");
-        // return tauri::ipc::Response::new("err");
-        return Err(ReflexCommandError::from("Failed to load image"));
-        // return Err("Failed to load image".to_owned());
+        return Err(
+            ReflexCommandError::from(
+                anyhow::anyhow!("Failed to load image")
+                    .context(format!("for image_id {}", image_id))
+            )
+        );
     }
     
 }
