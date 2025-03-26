@@ -14,19 +14,30 @@ export default function AsyncImageFromApi({image, imageStyle, orientation, width
     () => {
       let mounted = true;
       const awaitable = async () => {
-        const contents = await invoke(
-          "get_image_for_id",
-          {
-            imageId: image.imageid.toString(),
-            mode: "lo"
-          }
-        );
-        const base64string = new Uint8Array(contents).toBase64();
+        let imageSrc = null;
+        try
+        {
+
+          const contents = await invoke(
+            "get_image_for_id",
+            {
+              imageId: image.imageid.toString(),
+              mode: "lo"
+            }
+          );
+          const base64string = new Uint8Array(contents).toBase64();
+          imageSrc = `data:image/jpg;base64,${base64string}`;
+        }
+        catch(error)
+        {
+          console.log({error});
+          imageSrc = "/plzno-freepik.jpg";
+        }
         // todo: it's a better pattern to abort the request according to react sources
         // though ... this seems to catch more cases we care about
         if (mounted)
         {
-          setImageState(`data:image/jpg;base64,${base64string}`);
+          setImageState(imageSrc);
         }
       };
       awaitable();
