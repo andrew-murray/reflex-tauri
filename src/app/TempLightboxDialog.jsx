@@ -8,31 +8,48 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import ClearIcon from '@mui/icons-material/Clear';
 import AsyncImageFromApi from "./AsyncImageFromApi";
+import {
+  Lightbox, 
+  createIcon,
+  useLightboxState
+} from "yet-another-react-lightbox";
+import Slideshow from "yet-another-react-lightbox/plugins/slideshow";
+import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen";
+import Captions from "yet-another-react-lightbox/plugins/captions";
+import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
+import "yet-another-react-lightbox/styles.css";
+import "yet-another-react-lightbox/plugins/captions.css";
+import "yet-another-react-lightbox/plugins/thumbnails.css";
 
 export default function TempLightboxDialog({images, activeImageIndex, orientation, setActiveImage, onClose}) {
   // Get the 0th element assuming this to be unique if-it-exists and undefined otherwise
   // the filepath may not be a useful title, so don't have one for now
   // const title = 
-  return <Dialog
-    open={true}
-    onClose={onClose}
-    aria-labelledby="alert-dialog-title"
-    aria-describedby="alert-dialog-description"
-  >
-    <DialogTitle id="graph-dialog-title">
-      <IconButton
-        onClick={onClose}
-      >
-        <ClearIcon />
-      </IconButton>
-    </DialogTitle>
-    <DialogContent style={{width: 800, height: 800, padding: 10}}>
-      <AsyncImageFromApi
-        image={images[activeImageIndex]}
-        width={"100%"}
-        height={"100%"}
-        orientation={orientation}
-      />
-    </DialogContent>
-  </Dialog>
+  return <Lightbox
+    index={activeImageIndex}
+    open={activeImageIndex >= 0}
+    slides={images.map(im => Object.assign({}, im, {type: "custom-slide"}))}
+    render={{
+      slide: ({slide, rect}) => {
+        return slide.type === "custom-slide" ? (
+          <AsyncImageFromApi
+            image={slide}
+            orientation={orientation}
+            width={rect.width}
+            height={rect.height}
+            imageStyle={{objectFit: "contain"}}
+          />
+        ) : undefined;
+      }
+    }}
+    close={onClose}
+    toolbar={{
+      buttons: [
+        "slideshow",
+        "close"
+      ]
+    }}
+    // plugins={[Captions, Fullscreen, Slideshow, Thumbnails]}
+    plugins={[Slideshow]}
+  />
 };
