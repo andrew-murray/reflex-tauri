@@ -252,7 +252,7 @@ export default function Home() {
         }
         if(SQL)
         {
-          setInProgress(true); 
+          setInProgress(true);
           const blob = await readFile(
             metadataDBPath
           );
@@ -267,7 +267,16 @@ export default function Home() {
           for (let currentTotal = 0; currentTotal < maxLimit; currentTotal += chunkLength)
           {
             const metadataChunk = metadata.queries.select.images(localDB, chunkLength, currentTotal);
-            setImages( prevImages => prevImages.concat(metadataChunk));
+            // todo: Andy reckon's he's guessed a bug, as he thinks he sees our image list getting "duplicated"
+            // into itself. Let's leave this fix here and diagnose later, if this is the right fix.
+            if (currentTotal === 0)
+            {
+              setImages(metadataChunk);
+            }
+            else
+            {
+              setImages( prevImages => prevImages.concat(metadataChunk));
+            }
             if(metadataChunk.length < chunkLength)
             {
               break;
