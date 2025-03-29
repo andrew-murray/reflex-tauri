@@ -162,12 +162,15 @@ export default function Home() {
   const [metricsToPlot, setMetricsToPlot] = React.useState([]);
   const [activeImageIndex, setActiveImageIndex] = React.useState(null);
 
-  const [logMode, setLogMode] = React.useState(false);
-  const [ratingsToGraph, setRatingsToGraph] = React.useState(null);
   const [metadataDBPath, setMetadataDBPath] = React.useState(null);
   const [previewDBPath, setPreviewDBPath] = React.useState(null);
   const [previewDB, setPreviewDB] = React.useState(null);
   const [imageToOrientation, setImageToOrientation] = React.useState(null);
+
+  // graph panel settings, managed by this component because I feel like I might make the
+  // ratingsToGraph a lot more involved at some point
+  const [logMode, setLogMode] = React.useState(false);
+  const [ratingsToGraph, setRatingsToGraph] = React.useState(null);
 
   const folderData = React.useMemo( ()=> {
       return computeFolderAndFilesystemPathsFromImages(images);
@@ -527,36 +530,38 @@ export default function Home() {
             handleDrawerOpen={handleDrawerOpen}
           />
         }
-        <MainMinusDrawer open={navOpen} style={{textAlign: "center",   display: "flex", alignItems: "center", justifyContent: "center"}}>
-        <div style={{width: "80vw", minHeight: "80vh", margin: "auto", alignItems: "center"}}>
-              {(images.length !== 0 && !inProgress) &&
-                <GraphPanel
-                  images={filteredImageState.filteredImages}
-                  logSelected={logMode}
-                  onSetLogMode={setLogMode}
-                  ratingMode={ratingsToGraph}
-                  onSetRatingMode={setRatingsToGraph}
-                />
-              }
-              {(images.length !== 0 && !inProgress) &&
-                <DataTable
-                  key={uniqueDataKey}
+        <MainMinusDrawer open={navOpen} style={{textAlign: "center",   display: "flex", alignItems: "center", justifyContent: "center", padding: "1vh"}}>
+          <div style={{width: "80vw", minHeight: "80vh", margin: "auto", alignItems: "center"}}>
+                {(images.length !== 0 && !inProgress) &&
+                  <div style={{width: "100%", height: "40vh"}}>
+                    <GraphPanel
+                      images={filteredImageState.filteredImages}
+                      logSelected={logMode}
+                      onSetLogMode={setLogMode}
+                      ratingMode={ratingsToGraph}
+                      onSetRatingMode={setRatingsToGraph}
+                    />
+                  </div>
+                }
+                {(images.length !== 0 && !inProgress) &&
+                  <DataTable
+                    key={uniqueDataKey}
 
-                  images={images}
-                  filteredImages={filteredImageState.filteredImages}
-                  filtersByMetric={filtersByMetric}
+                    images={images}
+                    filteredImages={filteredImageState.filteredImages}
+                    filtersByMetric={filtersByMetric}
 
-                  onSelectMetric={selectMetric}
-                  onSetFiltersForMetric={onSetFiltersForMetric}
+                    onSelectMetric={selectMetric}
+                    onSetFiltersForMetric={onSetFiltersForMetric}
 
-                  onSelectImageIndex={(i)=>{setActiveImageIndex(i);}}
-                />
-              }
-              {(!inProgress && images.length === 0) && <AsyncFileImport 
-                onImport={handleMetadataFilepath}
-              />}
-              {inProgress && <WaitingMessage />}
-        </div>
+                    onSelectImageIndex={(i)=>{setActiveImageIndex(i);}}
+                  />
+                }
+                {(!inProgress && images.length === 0) && <AsyncFileImport 
+                  onImport={handleMetadataFilepath}
+                />}
+                {inProgress && <WaitingMessage />}
+          </div>
         </MainMinusDrawer>
         {metricsToPlot.map( (metric, index) => {
           return <GraphDialog

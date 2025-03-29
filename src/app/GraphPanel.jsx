@@ -20,13 +20,14 @@ import ToggleButton from '@mui/material/ToggleButton';
 
 function GraphSettingsPanel({logSelected, onSetLogMode, ratingMode, onSetRatingMode})
 {
-    return <List>
+    return <List style={{paddingLeft: "1em", paddingRight: "1em"}}>
         <ListItem key="ln-mode">
             <ToggleButton
               selected={logSelected}
               onChange={() => onSetLogMode((prevSelected) => !prevSelected)}
+              style={{width: "100%"}}
             >
-                ln
+                logarithmic
             </ToggleButton>
         </ListItem>
         <ListItem key="rating-mode">
@@ -42,6 +43,7 @@ function GraphSettingsPanel({logSelected, onSetLogMode, ratingMode, onSetRatingM
                     onSetRatingMode(null);
                 }
               }}
+              style={{width: "100%"}}
             >
                 rating
             </ToggleButton>
@@ -140,46 +142,42 @@ export default function GraphPanel({images, logSelected, onSetLogMode, ratingMod
     // but to do that, I need fixed categories
 
 
-    return <Paper style={{width: "100%", height: "50vh"}}>
-        <Grid container>
-            <Grid item xs={11}>
-                <Grid container>
-                  <Grid item xs={4} style={{textAlign: "center"}}>
-                    <Paper style={{margin: "auto", width: "100%", height: "50vh"}}>
-                        <Graphs.BarGraph
-                            data={reducedData[shutter]}
-                            dataKey={name[shutter]}
-                            color="#c0ea02"
-                            logMode={logSelected ? true : undefined}
-                            ratingMode={ratingMode}
-                        />
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={4} style={{textAlign: "center"}}>
-                    <Paper style={{margin: "auto", width: "100%", height: "50vh"}}>
-                        <Graphs.BarGraph
-                            data={reducedData[aperture]}
-                            dataKey={name[aperture]}
-                            color="#eac002"
-                            logMode={logSelected ? true : undefined}
-                            ratingMode={ratingMode}
-                        />
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={4} style={{textAlign: "center"}}>
-                    <Paper style={{margin: "auto", width: "100%", height: "50vh"}}>
-                        <Graphs.BarGraph
-                            data={reducedData[iso]}
-                            dataKey={name[iso]}
-                            color="#4090c0"
-                            logMode={logSelected ? true : undefined}
-                            ratingMode={ratingMode}
-                        />
-                    </Paper>
-                  </Grid>
-                </Grid>
-            </Grid>
-            <Grid item xs={1}>
+    return <Paper style={{width: "100%", height: "100%"}}>
+        <Grid container columns={10} style={{width: "100%", height: "100%"}}>
+          <Grid item xs={3} style={{textAlign: "center", height: "100%"}}>
+            <Paper style={{margin: "auto", width: "100%", height: "100%", paddingTop: "1em", paddingRight: "0.5em"}}>
+                <Graphs.BarGraph
+                    data={reducedData[shutter]}
+                    dataKey={name[shutter]}
+                    color="#c0ea02"
+                    logMode={logSelected ? true : undefined}
+                    ratingMode={ratingMode}
+                />
+            </Paper>
+          </Grid>
+          <Grid item xs={3} style={{textAlign: "center", height: "100%"}}>
+            <Paper style={{margin: "auto", width: "100%", height: "100%", paddingTop: "1em", paddingRight: "0.5em"}}>
+                <Graphs.BarGraph
+                    data={reducedData[aperture]}
+                    dataKey={name[aperture]}
+                    color="#eac002"
+                    logMode={logSelected ? true : undefined}
+                    ratingMode={ratingMode}
+                />
+            </Paper>
+          </Grid>
+          <Grid item xs={3} style={{textAlign: "center", height: "100%"}}>
+            <Paper style={{margin: "auto", width: "100%", height: "100%", paddingTop: "1em", paddingRight: "0.5em"}}>
+                <Graphs.BarGraph
+                    data={reducedData[iso]}
+                    dataKey={name[iso]}
+                    color="#4090c0"
+                    logMode={logSelected ? true : undefined}
+                    ratingMode={ratingMode}
+                />
+            </Paper>
+          </Grid>
+            <Grid item xs={1} style={{height: "100%"}}>
                 <GraphSettingsPanel 
                     logSelected={logSelected}
                     onSetLogMode={onSetLogMode}
