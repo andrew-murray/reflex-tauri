@@ -406,7 +406,6 @@ export default function Home() {
           ));
         const filesystemIsEqual = filteredImageState.filesystemFilters === filesystemFilters;
         const allMetricsEqual = filtersByMetric === filteredImageState.prevFiltersByMetric;
-        console.log( {filtersByMetric, filteredImageState })
         const unionKeys = Array.from(
           new Set(Object.keys(filtersByMetric)).union(new Set(Object.keys(filteredImageState.prevFiltersByMetric)))
         );

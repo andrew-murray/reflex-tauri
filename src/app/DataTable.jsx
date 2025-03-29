@@ -23,15 +23,9 @@ const makeColumns = (onSelectImageIndex) =>
         {},
         defs[0],
         {cell : ({cell, row}) => {
-            //console.log("clicked");
-            // console.log(row.original);
             const path = row.original["com_adobe_absoluteFilepath"];
             const image_id = row.original["imageid"];
-            // fixme: tooltip just doesn't cut it, I can't customise it in the way I want
-            // but https://mui.com/material-ui/react-popover/ 
-            // is what I want ... but it probably needs a custom component in its own file, see OnHoverImage.jsx
             return <Button onClick={()=>{
-                console.log("selected image index " + row.index.toString());
                 onSelectImageIndex(row.index);
             }}>
                 <Typography>
