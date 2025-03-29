@@ -22,6 +22,7 @@ export default function AsyncImageFromApi({image, imageStyle, orientation, width
             "get_image_for_id",
             {
               imageId: image["imageid"].toString(),
+              imagePath: image["com_adobe_absoluteFilepath"],
               mode: "hi"
             }
           );

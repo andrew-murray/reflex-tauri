@@ -247,7 +247,7 @@ pub type CommandResult<T> = std::result::Result<T, ReflexCommandError>;
 
 
 #[tauri::command]
-fn get_image_for_id(state: tauri::State<AppState>, image_id: String, mode: String) -> CommandResult<tauri::ipc::Response> {
+fn get_image_for_id(state: tauri::State<AppState>, image_id: String, image_path: String, mode: String) -> CommandResult<tauri::ipc::Response> {
     if mode != "hi" && mode != "lo"
     {
         return Err(
@@ -261,11 +261,15 @@ fn get_image_for_id(state: tauri::State<AppState>, image_id: String, mode: Strin
     if !preview_path.is_some()
     {
 
-        return Err(ReflexCommandError::from(
-            anyhow::anyhow!("Preview does not exist")
-                .context(format!("for image_id {}", image_id))
-        ));
+            return Err(ReflexCommandError::from(
+                anyhow::anyhow!("Preview does not exist and raw file not accessible")
+                    .context(format!("for image_id {}", image_id))
+                    .context(format!("for image_path {}", image_path))
+            ));
+        }
+
     }
+    
     let pps = preview_path.unwrap();
     let image_result = lrprev::get_jpeg_byte_segments_from_file(
         &pps    
