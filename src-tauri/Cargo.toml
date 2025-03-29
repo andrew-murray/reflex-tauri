@@ -33,4 +33,5 @@ futures = "0.3.31"
 base64 = "0.22.1"
 anyhow = "1.0.97"
 thiserror = "2.0.12"
+rawloader = "0.37.1"
 

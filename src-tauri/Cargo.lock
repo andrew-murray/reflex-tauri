@@ -549,7 +549,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5fbd1fe9db3ebf71b89060adaf7b0504c2d6a425cf061313099547e382c2e472"
 dependencies = [
  "serde",
- "toml",
+ "toml 0.8.20",
 ]
 
 [[package]]
@@ -1061,7 +1061,7 @@ dependencies = [
  "cc",
  "memchr",
  "rustc_version",
- "toml",
+ "toml 0.8.20",
  "vswhom",
  "winreg",
 ]
@@ -1093,6 +1093,17 @@ name = "enumflags2_derive"
 version = "0.7.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc4caf64a58d7a6d65ab00639b046ff54399a39f5f2554728895ace4b297cd79"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.99",
+]
+
+[[package]]
+name = "enumn"
+version = "0.1.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f9ed6b3789237c8a0c1c505af1c7eb2c560df6186f01b098c3a1064ea532f38"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3709,6 +3720,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "20675572f6f24e9e76ef639bc5552774ed45f1c30e2951e1e99c59888861c539"
 
 [[package]]
+name = "rawloader"
+version = "0.37.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4d8c6f168c492ffd326537b3aa5a8d5fe07f0d8a3970c5957f286bcd13f888aa"
+dependencies = [
+ "byteorder",
+ "enumn",
+ "glob",
+ "lazy_static",
+ "rayon",
+ "rustc_version",
+ "toml 0.5.11",
+]
+
+[[package]]
 name = "rayon"
 version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4729,7 +4755,7 @@ dependencies = [
  "cfg-expr",
  "heck 0.5.0",
  "pkg-config",
- "toml",
+ "toml 0.8.20",
  "version-compare",
 ]
 
@@ -4848,6 +4874,7 @@ dependencies = [
  "futures",
  "glob",
  "image",
+ "rawloader",
  "serde",
  "serde_json",
  "sqlx",
@@ -4879,7 +4906,7 @@ dependencies = [
  "serde_json",
  "tauri-utils",
  "tauri-winres",
- "toml",
+ "toml 0.8.20",
  "walkdir",
 ]
 
@@ -4937,7 +4964,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tauri-utils",
- "toml",
+ "toml 0.8.20",
  "walkdir",
 ]
 
@@ -4977,7 +5004,7 @@ dependencies = [
  "tauri-plugin",
  "tauri-utils",
  "thiserror 2.0.12",
- "toml",
+ "toml 0.8.20",
  "url",
  "uuid",
 ]
@@ -5095,7 +5122,7 @@ dependencies = [
  "serde_with",
  "swift-rs",
  "thiserror 2.0.12",
- "toml",
+ "toml 0.8.20",
  "url",
  "urlpattern",
  "uuid",
@@ -5109,7 +5136,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56eaa45f707bedf34d19312c26d350bc0f3c59a47e58e8adbeecdc850d2c13a0"
 dependencies = [
  "embed-resource",
- "toml",
+ "toml 0.8.20",
 ]
 
 [[package]]
@@ -5288,6 +5315,15 @@ dependencies = [
  "futures-sink",
  "pin-project-lite",
  "tokio",
+]
+
+[[package]]
+name = "toml"
+version = "0.5.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f4f7f0dd8d50a853a531c426359045b1998f04219d88799810762cd4ad314234"
+dependencies = [
+ "serde",
 ]
 
 [[package]]

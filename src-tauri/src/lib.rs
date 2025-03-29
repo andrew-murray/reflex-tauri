@@ -260,15 +260,22 @@ fn get_image_for_id(state: tauri::State<AppState>, image_id: String, image_path:
     let preview_path = get_preview_path_for_image_id( state, &image_id );
     if !preview_path.is_some()
     {
-
+        // fallback to loading raw
+        // let raw_exists = fs::exists(&image_path).unwrap_or(false);
+        // if raw_exists
+        // {
+        //     let raw_result = rawloader::decode_file(&image_path);
+        // }
+        // else {
         return Err(ReflexCommandError::from(
             anyhow::anyhow!("Preview does not exist and raw file not accessible")
                 .context(format!("for image_id {}", image_id))
                 .context(format!("for image_path {}", image_path))
         ));
+        // }
 
     }
-    
+
     let pps = preview_path.unwrap();
     let image_result = lrprev::get_jpeg_byte_segments_from_file(
         &pps    
