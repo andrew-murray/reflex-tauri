@@ -1,5 +1,5 @@
 
-const directSelect = (db, table, columns, limit, offset) => {
+const directSelect = (db, table, columns, limit, offset, orderBy) => {
   if (!db)
   {
     throw Error("db was not provided/was not ready");
@@ -7,12 +7,13 @@ const directSelect = (db, table, columns, limit, offset) => {
   const col_join = columns === "*" ? "*" : columns.join(",");
   const slim = limit ? ` LIMIT ${limit}` : "";
   const soffset = offset ? ` OFFSET ${offset}`: "";
-  const qs = `SELECT ${col_join} FROM ${table}${slim}${soffset};`
+  const ob = orderBy ? ` ORDER BY ${orderBy}` : "";
+  const qs = `SELECT ${col_join} FROM ${table}${ob}${slim}${soffset};`
   return db.exec(qs);
 };
 
-const genericSelect = (db, table, columns, limit, offset) => {
-  const qresult = directSelect(db, table, columns, limit, offset);
+const genericSelect = (db, table, columns, limit, offset, orderBy) => {
+  const qresult = directSelect(db, table, columns, limit, offset, orderBy);
   const res_columns = qresult[0].columns;
   return qresult[0].values.map( row => Object.fromEntries(
     res_columns.keys().map( i => [res_columns[i], row[i]])
@@ -133,7 +134,7 @@ export const catalogue = {
 export const metadata = {
   "queries": {
     "select": {
-      "images": (db, limit, offset) => {
+      "images": (db, limit, offset, orderby) => {
         return genericSelect(
           db, 
           "AgImagesMetadata",
@@ -157,7 +158,8 @@ export const metadata = {
             "com_adobe_dateTime"
           ],
           limit,
-          offset
+          offset,
+          orderby
         )
       }
     }

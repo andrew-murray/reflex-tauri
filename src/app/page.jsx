@@ -266,7 +266,7 @@ export default function Home() {
           const chunkLength = 5000;
           for (let currentTotal = 0; currentTotal < maxLimit; currentTotal += chunkLength)
           {
-            const metadataChunk = metadata.queries.select.images(localDB, chunkLength, currentTotal);
+            const metadataChunk = metadata.queries.select.images(localDB, chunkLength, currentTotal, "imageid DESC");
             // todo: Andy reckon's he's guessed a bug, as he thinks he sees our image list getting "duplicated"
             // into itself. Let's leave this fix here and diagnose later, if this is the right fix.
             if (currentTotal === 0)
