@@ -60,7 +60,7 @@ const makeColumns = (onSelectImageIndex) =>
             {},
             {
                 cell: ({ cell, row }) => {
-                    return <div style={{minWidth:"7vw"}}>{row.original[k]}</div>;
+                    return <Typography style={{minWidth:"7vw"}}>{row.original[k]}</Typography>;
                 }
             },
             defs[i]

@@ -15,6 +15,7 @@ import {
     Pagination,
     styled
 } from "@mui/material";
+import { useTheme } from '@mui/material/styles';
 import {
     flexRender,
     getCoreRowModel,
@@ -45,18 +46,45 @@ import StaticColumnDefs from "./StaticColumnDefs";
 
 // Styles with styled-component
 
-export const StyledTableRow = styled(TableRow)`
-    &:nth-of-type(odd) {
-        background-color: #f1f1f1;
+export const StyledTableRow = styled(TableRow)(({ theme }) => {
+  const dark = theme.palette.mode === "dark";
+  const common = {
+    "&:last-child td": { 
+      border: 0
+    },
+    "&:last-child th":  {
+        border: 0
+    },
+    ":hover": {
+        backgroundColor: theme.palette.background.selected
     }
-    &:last-child td,
-    &:last-child th {
-        border: 0;
-    }
-    :hover {
-        background-color: #d9d9d9;
-    }
-`;
+  };
+  if (dark)
+  {
+    return Object.assign(
+      {},
+      common,
+      {
+        tr:  {
+          backgroundColor: theme.palette.background.paper
+        }
+      }
+    )
+  }
+  else
+  {
+    // light mode needs a bit more contrast
+    return Object.assign(
+      {},
+      common,
+      {
+        "&:nth-of-type(odd)":  {
+           backgroundColor: theme.palette.background.alternate
+        }
+      }
+    )
+  }
+});
 
 export const StyledPagination = styled(Pagination)`
     display: flex;
@@ -146,9 +174,6 @@ export function FilterDialog({images, filteredImages, metricKey, filtersForMetri
   </Dialog>
 };
 
-const activeColor =  "#EEE8AA";
-const passiveColor = "#E8E8E8";
-
 const TableUI = ({
   images,
   filteredImages,
@@ -180,6 +205,8 @@ const TableUI = ({
       () => headerComponent,
       [headerComponent]
     );
+
+    const theme = useTheme();
 
     const pageCount = Math.ceil(memoizedData.length/itemsPerPage);
 
@@ -245,9 +272,9 @@ const TableUI = ({
             {!isFetching && (
               <TableHead>
                 {getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id} className="bg-[#000]">
+                  <TableRow key={headerGroup.id} style={{backgroundColor: theme.palette.primary.main}}>
                     {headerGroup.headers.map((header) => {
-                      return <TableCell key={header.id} className="text-sm font-cambon" style={{color: "white"}}>
+                      return <TableCell key={header.id} className="text-sm font-cambon">
 
                         {header.isPlaceholder
                           ? null :
@@ -261,7 +288,7 @@ const TableUI = ({
                           && <IconButton
                             onClick={()=>onSelectMetric(header.column.columnDef.accessorKey)}
                           >
-                            <AddchartIcon  style={{ color: "#ffffff" }} />
+                            <AddchartIcon />
                           </IconButton>
                           }
                           {header.column.columnDef.filterable 
@@ -269,9 +296,7 @@ const TableUI = ({
                           && <IconButton
                                 onClick={()=>setActiveFilterDialog(header.column.columnDef.accessorKey)}
                               >
-                                <FilterAltIcon style={{ 
-                                    color:  passiveColor
-                                }} />
+                                <FilterAltIcon />
                               </IconButton>
                           }
                           {header.column.columnDef.filterable 
@@ -279,9 +304,7 @@ const TableUI = ({
                           && <IconButton
                                 onClick={()=>clearFiltersForMetric(header.column.columnDef.accessorKey)}
                               >
-                                <FilterAltOffIcon  style={{ 
-                                    color: activeColor
-                                }} />
+                                <FilterAltOffIcon />
                               </IconButton>
                           }
                         </Fragment>
@@ -300,7 +323,7 @@ const TableUI = ({
                       <TableCell
                         onClick={() => onClickRow?.(cell, row)}
                         key={cell.id}
-                        className="text-[#2E353A] text-base font-graphik"
+                        className="font-graphik"
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
