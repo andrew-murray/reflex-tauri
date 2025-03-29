@@ -21,8 +21,8 @@ export default function AsyncImageFromApi({image, imageStyle, orientation, width
           const contents = await invoke(
             "get_image_for_id",
             {
-              imageId: image.imageid.toString(),
-              mode: "lo"
+              imageId: image["imageid"].toString(),
+              mode: "hi"
             }
           );
           const base64string = new Uint8Array(contents).toBase64();

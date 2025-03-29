@@ -281,12 +281,12 @@ fn get_image_for_id(state: tauri::State<AppState>, image_id: String, mode: Strin
                 )
             );
         }
-        if mode == "hi"
+        if mode == "lo"
         {
             let bytes : Vec<u8> = loaded_image_bytes.get(0).unwrap().to_owned();
             return Ok(Response::new(bytes));
         }
-        if mode == "lo"
+        if mode == "hi"
         {
             let bytes = loaded_image_bytes.get(loaded_image_bytes.len() - 1).unwrap().to_owned();
             return Ok(Response::new(bytes));
