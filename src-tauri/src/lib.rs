@@ -261,12 +261,11 @@ fn get_image_for_id(state: tauri::State<AppState>, image_id: String, image_path:
     if !preview_path.is_some()
     {
 
-            return Err(ReflexCommandError::from(
-                anyhow::anyhow!("Preview does not exist and raw file not accessible")
-                    .context(format!("for image_id {}", image_id))
-                    .context(format!("for image_path {}", image_path))
-            ));
-        }
+        return Err(ReflexCommandError::from(
+            anyhow::anyhow!("Preview does not exist and raw file not accessible")
+                .context(format!("for image_id {}", image_id))
+                .context(format!("for image_path {}", image_path))
+        ));
 
     }
     
