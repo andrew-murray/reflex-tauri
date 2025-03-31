@@ -20,6 +20,7 @@ import ToggleButton from '@mui/material/ToggleButton';
 
 function GraphSettingsPanel({logSelected, onSetLogMode, ratingMode, onSetRatingMode})
 {
+    // TODO: Replace "logarithmic" with an icon
     return <List style={{paddingLeft: "1em", paddingRight: "1em"}}>
         <ListItem key="ln-mode"  disablePadding>
             <ToggleButton
