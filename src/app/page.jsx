@@ -18,6 +18,7 @@ import {metadata, preview} from "./LightroomDB"
 import useScript from "./useScript"
 import { readFile } from '@tauri-apps/plugin-fs';
 import { invoke } from '@tauri-apps/api/core';
+import Grid from '@mui/material/Grid';
 
 const MainMinusDrawer = styled(
   'main', 
@@ -515,6 +516,7 @@ export default function Home() {
     setMetricsToPlot([metric]);
   });
   // FIXME: What should we render if we've filtered all the images out?
+
   return (<React.Fragment>        
       <CssBaseline />
       <Box sx={{ display: 'flex' }}>
@@ -530,37 +532,37 @@ export default function Home() {
             handleDrawerOpen={handleDrawerOpen}
           />
         }
-        <MainMinusDrawer open={navOpen} style={{textAlign: "center",   display: "flex", alignItems: "center", justifyContent: "center", padding: "1vh"}}>
-          <div style={{width: "80vw", minHeight: "80vh", margin: "auto", alignItems: "center"}}>
-                {(images.length !== 0 && !inProgress) &&
-                  <div style={{width: "100%", height: "40vh"}}>
-                    <GraphPanel
-                      images={filteredImageState.filteredImages}
-                      logSelected={logMode}
-                      onSetLogMode={setLogMode}
-                      ratingMode={ratingsToGraph}
-                      onSetRatingMode={setRatingsToGraph}
-                    />
-                  </div>
-                }
-                {(images.length !== 0 && !inProgress) &&
-                  <DataTable
-                    key={uniqueDataKey}
+        <MainMinusDrawer open={navOpen} style={{textAlign: "center",   display: "flex", alignItems: "center", justifyContent: "center", padding: "1vw"}}>
+          <div style={{width: "100%", backgroundColor: "#442285", minHeight: "80vh", margin: "auto", alignItems: "center"}}>
+          {(images.length !== 0 && !inProgress) &&
+            <div style={{width: "100%", height: "40vh"}}>
+              <GraphPanel
+                images={filteredImageState.filteredImages}
+                logSelected={logMode}
+                onSetLogMode={setLogMode}
+                ratingMode={ratingsToGraph}
+                onSetRatingMode={setRatingsToGraph}
+              />
+            </div>
+          }
+          {false && (images.length !== 0 && !inProgress) &&
+            <DataTable
+              key={uniqueDataKey}
 
-                    images={images}
-                    filteredImages={filteredImageState.filteredImages}
-                    filtersByMetric={filtersByMetric}
+              images={images}
+              filteredImages={filteredImageState.filteredImages}
+              filtersByMetric={filtersByMetric}
 
-                    onSelectMetric={selectMetric}
-                    onSetFiltersForMetric={onSetFiltersForMetric}
+              onSelectMetric={selectMetric}
+              onSetFiltersForMetric={onSetFiltersForMetric}
 
-                    onSelectImageIndex={(i)=>{setActiveImageIndex(i);}}
-                  />
-                }
-                {(!inProgress && images.length === 0) && <AsyncFileImport 
-                  onImport={handleMetadataFilepath}
-                />}
-                {inProgress && <WaitingMessage />}
+              onSelectImageIndex={(i)=>{setActiveImageIndex(i);}}
+            />
+          }
+          {(!inProgress && images.length === 0) && <AsyncFileImport 
+            onImport={handleMetadataFilepath}
+          />}
+          {inProgress && <WaitingMessage />}
           </div>
         </MainMinusDrawer>
         {metricsToPlot.map( (metric, index) => {
