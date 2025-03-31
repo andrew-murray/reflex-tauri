@@ -63,12 +63,12 @@ export const StyledTableRow = styled(TableRow)(({ theme }) => {
   {
     return Object.assign(
       {},
-      common,
       {
         tr:  {
           backgroundColor: theme.palette.background.paper
         }
-      }
+      },
+      common
     )
   }
   else
@@ -76,12 +76,13 @@ export const StyledTableRow = styled(TableRow)(({ theme }) => {
     // light mode needs a bit more contrast
     return Object.assign(
       {},
-      common,
       {
         "&:nth-of-type(odd)":  {
            backgroundColor: theme.palette.background.alternate
         }
-      }
+      },
+      // common must come last, for the hover to apply after the backgroundColor
+      common
     )
   }
 });
@@ -250,7 +251,7 @@ const TableUI = ({
       },
       []
     );
-
+    console.log({palette:theme.palette})
     return (
       <Paper elevation={2} style={{ padding: "0 0 1rem 0" }}>
         {false && <Box paddingX="1rem">
@@ -272,10 +273,9 @@ const TableUI = ({
             {!isFetching && (
               <TableHead>
                 {getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id} style={{backgroundColor: theme.palette.primary.main}}>
+                  <TableRow key={headerGroup.id} style={{backgroundColor: theme.palette.background.selected}}>
                     {headerGroup.headers.map((header) => {
                       return <TableCell key={header.id} className="text-sm font-cambon">
-
                         {header.isPlaceholder
                           ? null :
                           flexRender(

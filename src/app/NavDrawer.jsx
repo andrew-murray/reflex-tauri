@@ -196,9 +196,6 @@ const createNodeFromCache = (fullPath, relPath, queryCache) =>
   </IconButton>
 */
 
-const activeColor =  "#EEE8AA";
-const passiveColor = "#E8E8E8";
-
 function NavDrawer({
   folderData, 
   open,
@@ -254,51 +251,54 @@ function NavDrawer({
     },
     [folderData]
   );
-
   const mkListItem = (text,index) => {
     const active = index === 0 ? lightroomFolderActive : filesystemActive;
     return <ListItem 
       key={text} 
       disablePadding 
-      sx={{ display: 'block', minHeight: 48, backgroundColor: active ? activeColor : passiveColor}}>
-        <ListItemButton>
-          <ListItemIcon
-            sx={[
-              {
-                minWidth: 0,
-                justifyContent: 'center',
-              },
-              open
-                ? {
-                    mr: 3,
-                  }
-                : {
-                    mr: 'auto',
+      sx={{ display: 'block', minHeight: 48}} >
+        <Paper>
+          <div style={active ? {backgroundColor: theme.palette.primary.main} : undefined}>
+            <ListItemButton>
+              <ListItemIcon
+                sx={[
+                  {
+                    minWidth: 0,
+                    justifyContent: 'center',
                   },
-            ]}
-          >
-            {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
-          </ListItemIcon>
-          <ListItemText
-            primary={text}
-            sx={[
-              open
-                ? {
-                    opacity: 1,
-                  }
-                : {
-                    opacity: 0,
-                  },
-            ]}
-          />
-        </ListItemButton>
+                  open
+                    ? {
+                        mr: 3,
+                      }
+                    : {
+                        mr: 'auto',
+                      },
+                ]}
+              >
+                {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+              </ListItemIcon>
+              <ListItemText
+                primary={text}
+                sx={[
+                  open
+                    ? {
+                        opacity: 1,
+                      }
+                    : {
+                        opacity: 0,
+                      },
+                ]}
+              />
+            </ListItemButton>
+            </div>
+        </Paper>
     </ListItem>
   };
 
   const mkAccordionItem = (text, index) => {
     const active = index === 0 ? lightroomFolderActive : filesystemActive;
     return <ListItem key={text} disablePadding sx={{ display: 'block' }} style={{maxWidth: "100%"}}>
-      <Accordion style={{maxWidth: "100%", backgroundColor: active ? activeColor : passiveColor}}>
+      <Accordion style={{maxWidth: "100%", backgroundColor: active ? theme.palette.primary.main: undefined}} >
           <AccordionSummary
               expandIcon={
                 <ArrowDropDownIcon/>
