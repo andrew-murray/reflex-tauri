@@ -21,7 +21,7 @@ import ToggleButton from '@mui/material/ToggleButton';
 function GraphSettingsPanel({logSelected, onSetLogMode, ratingMode, onSetRatingMode})
 {
     return <List style={{paddingLeft: "1em", paddingRight: "1em"}}>
-        <ListItem key="ln-mode">
+        <ListItem key="ln-mode"  disablePadding>
             <ToggleButton
               selected={logSelected}
               onChange={() => onSetLogMode((prevSelected) => !prevSelected)}
@@ -30,7 +30,7 @@ function GraphSettingsPanel({logSelected, onSetLogMode, ratingMode, onSetRatingM
                 logarithmic
             </ToggleButton>
         </ListItem>
-        <ListItem key="rating-mode">
+        <ListItem key="rating-mode" disablePadding>
             <ToggleButton
               selected={ratingMode !== null}
               onChange={() => {
