@@ -21,22 +21,31 @@ import "yet-another-react-lightbox/styles.css";
 import "yet-another-react-lightbox/plugins/captions.css";
 import "yet-another-react-lightbox/plugins/thumbnails.css";
 
-export default function TempLightboxDialog({images, activeImageIndex, orientation, setActiveImage, onClose}) {
+export default function TempLightboxDialog({images, activeImageIndex, imageToOrientation, setActiveImage, onClose}) {
   // Get the 0th element assuming this to be unique if-it-exists and undefined otherwise
   // the filepath may not be a useful title, so don't have one for now
-  // const title = 
+  const memoizedSlides = React.useMemo( () => {
+    return [...images.keys()].map(index => Object.assign(
+      {},
+      images[index], 
+      {
+        type: "custom-slide",
+        orientation: imageToOrientation[images[index].imageid]
+      })
+    );
+  });
   return <Lightbox
     index={activeImageIndex}
     open={activeImageIndex >= 0}
-    slides={images.map(im => Object.assign({}, im, {type: "custom-slide"}))}
+    slides={memoizedSlides}
     render={{
       slide: ({slide, rect}) => {
         return slide.type === "custom-slide" ? (
           <AsyncImageFromApi
             image={slide}
-            orientation={orientation}
             width={rect.width}
             height={rect.height}
+            orientation={slide.orientation}
             imageStyle={{objectFit: "contain"}}
           />
         ) : undefined;

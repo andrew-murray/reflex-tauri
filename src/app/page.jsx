@@ -618,7 +618,7 @@ export default function Home() {
             images={filteredImageState.filteredImages}
             activeImageIndex={activeImageIndex}
             setActiveImageIndex={setActiveImageIndex}
-            orientation={imageToOrientation !== null ? imageToOrientation[filteredImageState.filteredImages[activeImageIndex].imageid] : undefined}
+            imageToOrientation={imageToOrientation}
             onClose={()=>{setActiveImageIndex(null);}}
           />
         }
