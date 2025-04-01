@@ -253,22 +253,8 @@ const TableUI = ({
     );
     console.log({palette:theme.palette})
     return (
-      <Paper elevation={2} style={{ padding: "0 0 1rem 0" }}>
-        {false && <Box paddingX="1rem">
-              {memoisedHeaderComponent && <Box>{memoisedHeaderComponent}</Box>}
-              {search && (
-                <TextField
-                  onChange={handleSearchChange}
-                  size="small"
-                  label={searchLabel}
-                  margin="normal"
-                  variant="outlined"
-                  fullWidth
-                />
-              )}
-            </Box>
-        }   
-        <Box style={{ overflowX: "auto" }}>
+      <Paper elevation={2} style={{ padding: "0 0 1rem 0"}}>
+        <Box>
           <MuiTable>
             {!isFetching && (
               <TableHead>
