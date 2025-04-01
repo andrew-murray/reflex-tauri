@@ -20,15 +20,48 @@ import { readFile } from '@tauri-apps/plugin-fs';
 import { invoke } from '@tauri-apps/api/core';
 import Grid from '@mui/material/Grid';
 
+// todo: it's a bit awkward to duplicate this width and easier here
+// unclear how to share this code
+const drawerOpenWidth = 420;
+
+const withDrawerOpenMixin = (theme) => ({
+  width: `calc(100% - 1px - ${drawerOpenWidth}px)`,
+  transition: theme.transitions.create(['width', 'margin'], {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.enteringScreen,
+  })
+});
+
+const withDrawerClosedMixin = (theme) => ({
+  // drawerClosedWidth = theme.spacing(7) or theme.spacing(8) respectively
+  width: `calc(100% - 1px - ${theme.spacing(7)})`,
+  [theme.breakpoints.up('sm')]: { 
+    width: `calc(100% - 1px - ${theme.spacing(8)})`
+  },
+  transition: theme.transitions.create(['width', 'margin'], {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen
+  })
+});
+
 const MainMinusDrawer = styled(
   'main', 
   { shouldForwardProp: (prop) => prop !== 'open' })(({ theme }) => ({
-    flexGrow: 1,
-    padding: theme.spacing(3),
-     transition: theme.transitions.create('margin', {
-       easing: theme.transitions.easing.sharp,
-       duration: theme.transitions.duration.leavingScreen,
-     })
+    overflowX: 'hidden',
+    variants: [
+      {
+        props: ({ open }) => open,
+        style: {
+          ...withDrawerOpenMixin(theme)
+        },
+      },
+      {
+        props: ({ open }) => !open,
+        style: {
+          ...withDrawerClosedMixin(theme)
+        },
+      }
+    ]
   })
 );
 
@@ -545,19 +578,21 @@ export default function Home() {
               />
             </div>
           }
-          {false && (images.length !== 0 && !inProgress) &&
-            <DataTable
-              key={uniqueDataKey}
+          {(images.length !== 0 && !inProgress) &&
+            <Box style={{width: "100%", overflowX: "scroll"}}>
+              <DataTable
+                key={uniqueDataKey}
 
-              images={images}
-              filteredImages={filteredImageState.filteredImages}
-              filtersByMetric={filtersByMetric}
+                images={images}
+                filteredImages={filteredImageState.filteredImages}
+                filtersByMetric={filtersByMetric}
 
-              onSelectMetric={selectMetric}
-              onSetFiltersForMetric={onSetFiltersForMetric}
+                onSelectMetric={selectMetric}
+                onSetFiltersForMetric={onSetFiltersForMetric}
 
-              onSelectImageIndex={(i)=>{setActiveImageIndex(i);}}
-            />
+                onSelectImageIndex={(i)=>{setActiveImageIndex(i);}}
+              />
+            </Box>
           }
           {(!inProgress && images.length === 0) && <AsyncFileImport 
             onImport={handleMetadataFilepath}
