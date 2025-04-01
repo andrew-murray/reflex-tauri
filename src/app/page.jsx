@@ -566,7 +566,7 @@ export default function Home() {
           />
         }
         <MainMinusDrawer open={navOpen} style={{textAlign: "center",   display: "flex", alignItems: "center", justifyContent: "center", padding: "1vw"}}>
-          <div style={{width: "100%", backgroundColor: "#442285", minHeight: "80vh", margin: "auto", alignItems: "center"}}>
+          <div style={{width: "100%", minHeight: "80vh", margin: "auto", alignItems: "center"}}>
           {(images.length !== 0 && !inProgress) &&
             <div style={{width: "100%", height: "40vh"}}>
               <GraphPanel
