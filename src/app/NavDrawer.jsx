@@ -17,7 +17,7 @@ import ListItemText from '@mui/material/ListItemText';
 import InboxIcon from '@mui/icons-material/MoveToInbox';
 import MailIcon from '@mui/icons-material/Mail';
 import { styled, useTheme} from '@mui/material/styles';
-
+import FolderIcon from '@mui/icons-material/Folder';
 import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
@@ -29,7 +29,7 @@ import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
 import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import React from 'react'
 import {pathsep} from "./defs"
-
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 
 const SAMPLE_PRODUCTS = [
   {
@@ -261,6 +261,7 @@ function NavDrawer({
           <div style={active ? {backgroundColor: theme.palette.primary.main} : undefined}>
             <ListItemButton>
               <ListItemIcon
+                onClick={handleDrawerOpen}
                 sx={[
                   {
                     minWidth: 0,
@@ -275,7 +276,7 @@ function NavDrawer({
                       },
                 ]}
               >
-                {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+                {index % 2 === 0 ? <FolderIcon /> : <InsertDriveFileIcon />}
               </ListItemIcon>
               <ListItemText
                 primary={text}
@@ -321,7 +322,7 @@ function NavDrawer({
                       },
                 ]}
               >
-                {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+                {index % 2 === 0 ? <FolderIcon /> : <InsertDriveFileIcon />}
               </ListItemIcon>
               <Typography component="span">{text}</Typography>
             </AccordionSummary>
