@@ -3775,6 +3775,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "reflex"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "futures",
+ "glob",
+ "image",
+ "rawloader",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "sysinfo 0.33.1",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-fs",
+ "tauri-plugin-opener",
+ "tauri-plugin-system-info",
+ "thiserror 2.0.12",
+]
+
+[[package]]
 name = "regex"
 version = "1.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4863,29 +4886,6 @@ dependencies = [
  "webview2-com",
  "window-vibrancy",
  "windows 0.60.0",
-]
-
-[[package]]
-name = "tauri-app"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "base64 0.22.1",
- "futures",
- "glob",
- "image",
- "rawloader",
- "serde",
- "serde_json",
- "sqlx",
- "sysinfo 0.33.1",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-fs",
- "tauri-plugin-opener",
- "tauri-plugin-system-info",
- "thiserror 2.0.12",
 ]
 
 [[package]]
