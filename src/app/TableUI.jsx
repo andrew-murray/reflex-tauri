@@ -274,39 +274,36 @@ const TableUI = ({
                             }
                           </div>
                           <div style={{display: "flex"}}>
-                            {(!header.isPlaceholder) && 
-                            <div style={{display: "flex"}}>
-                              <div style={{flexGrow: 1}} />
-                              <ButtonGroup variant="outlined" aria-label="Loading button group">
-                                  <Button
-                                    onClick={()=>onSelectMetric(header.column.columnDef.accessorKey)}
-                                    disabled={header.column.columnDef.plottable ? undefined : true}
-                                    style={{ borderRadius: 0, padding: 4}}
-                                  >
-                                    <AddchartIcon fontSize="small"/>
-                                  </Button>
-                                  <Button
-                                    disabled={header.column.columnDef.filterable? undefined: true}
-                                    onClick={()=>{
-                                      if(filtersByMetric[header.column.columnDef.accessorKey] === undefined)
-                                      {
-                                        setActiveFilterDialog(header.column.columnDef.accessorKey)
-                                      }
-                                      else
-                                      {
-                                        clearFiltersForMetric(header.column.columnDef.accessorKey)
-                                      }
-                                    }}
-                                    style={{ borderRadius: 0, padding: 4 }}
-                                  >
-                                    {filtersByMetric[header.column.columnDef.accessorKey] === undefined ? 
-                                      <FilterAltIcon fontSize="small"/>
-                                      : <FilterAltOffIcon size="small"/>
-                                    }
-                                </Button>
-                              </ButtonGroup>
-                            </div>
-                            }
+                          {(!header.isPlaceholder) &&
+                            <ButtonGroup variant="outlined" aria-label="Loading button group" orientation="vertical" style={{height: "100%"}}>
+                              <Button
+                                onClick={()=>onSelectMetric(header.column.columnDef.accessorKey)}
+                                disabled={header.column.columnDef.plottable ? undefined : true}
+                                style={{ borderRadius: 0, height: "50%", padding: 4}}
+                              >
+                                <AddchartIcon fontSize="small"/>
+                              </Button>
+                              <Button
+                                disabled={header.column.columnDef.filterable? undefined: true}
+                                onClick={()=>{
+                                  if(filtersByMetric[header.column.columnDef.accessorKey] === undefined)
+                                  {
+                                    setActiveFilterDialog(header.column.columnDef.accessorKey)
+                                  }
+                                  else
+                                  {
+                                    clearFiltersForMetric(header.column.columnDef.accessorKey)
+                                  }
+                                }}
+                                style={{ borderRadius: 0 , height: "50%", padding: 4}}
+                              >
+                                {filtersByMetric[header.column.columnDef.accessorKey] === undefined ? 
+                                  <FilterAltIcon fontSize="small"/>
+                                  : <FilterAltOffIcon size="small"/>
+                                }
+                            </Button>
+                            </ButtonGroup>
+                          }
                           </div>
                         </div>
                       </TableCell>
