@@ -15,6 +15,7 @@ import {
     Pagination,
     styled
 } from "@mui/material";
+import React from 'react'
 import { useTheme } from '@mui/material/styles';
 import {
     flexRender,
@@ -91,7 +92,7 @@ export const StyledTableRow = styled(TableRow)(({ theme }) => {
 export const StyledPagination = styled(Pagination)`
     display: flex;
     justify-content: center;
-    margin-top: 1rem;
+    margin-top: 0rem;
 `;
 
 export function FilterDialog({images, filteredImages, metricKey, filtersForMetric, handleClose, onSetFiltersForMetric, onSelectImageIndex}) {
@@ -254,8 +255,9 @@ const TableUI = ({
     );
 
     return (
-      <Paper elevation={2} style={{ padding: "0 0 1rem 0"}}>
+      <React.Fragment>
         <Box>
+          <Paper elevation={2} style={{ padding: "0 0 1rem 0",  overflowX: "scroll"}}>
           <MuiTable>
             {!isFetching && (
               <TableHead>
@@ -351,6 +353,8 @@ const TableUI = ({
               )}
             </TableBody>
           </MuiTable>
+
+          </Paper>
         </Box>
         {noDataFound && (
           <Box my={2} textAlign="center">
@@ -377,7 +381,7 @@ const TableUI = ({
           onSetFiltersForMetric={onSetFiltersForMetric}
         />
         }
-      </Paper>
+      </React.Fragment>
     );
   };
 

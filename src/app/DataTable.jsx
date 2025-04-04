@@ -98,7 +98,7 @@ const makeColumns = (onSelectImageIndex) =>
 
 // For pagination, define maximum of data per page
 
-const ITEMS_PER_PAGE = 50;
+const ITEMS_PER_PAGE = 6;
 
 const StaffTable = ({images, filteredImages, filtersByMetric, onSelectMetric, onSetFiltersForMetric, onSelectImageIndex}) => {
 
@@ -143,9 +143,7 @@ const StaffTable = ({images, filteredImages, filtersByMetric, onSelectMetric, on
     const DataLength = images.length;
 
     return (
-        <section className="mt-5">
-            <h3 className="text-[18px] mb-2 md:text-[24px] text-black">
-            </h3>
+        <section style={{marginTop: "0.5rem"}}>
             <Box>
                 <TableUI
                     columns={Columns}

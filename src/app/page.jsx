@@ -565,7 +565,7 @@ export default function Home() {
             handleDrawerOpen={handleDrawerOpen}
           />
         }
-        <MainMinusDrawer open={navOpen} style={{textAlign: "center",   display: "flex", alignItems: "center", justifyContent: "center", padding: "1vw"}}>
+        <MainMinusDrawer open={navOpen} style={{textAlign: "center",   display: "flex", alignItems: "center", justifyContent: "center", padding: "0.5vw"}}>
           <div style={{width: "100%", minHeight: "80vh", margin: "auto", alignItems: "center"}}>
           {(images.length !== 0 && !inProgress) &&
             <div style={{width: "100%", height: "40vh"}}>
@@ -579,7 +579,7 @@ export default function Home() {
             </div>
           }
           {(images.length !== 0 && !inProgress) &&
-            <Box style={{width: "100%", overflowX: "scroll"}}>
+            <Box style={{width: "100%"}}>
               <DataTable
                 key={uniqueDataKey}
 
