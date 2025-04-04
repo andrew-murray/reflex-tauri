@@ -39,10 +39,10 @@ const makeColumns = (onSelectImageIndex) =>
             const maxLength = 16;
             const maxCharPath = reducedPath.length > maxLength ? reducedPath.slice(0,maxLength-3) + "..." : reducedPath;
             return <React.Fragment>
-                <div style={{display: "flex"}}>
-                    <Typography title={path}>
+                <div style={{display: "flex", alignItems: "center"}}>
+                    <span title={path}>
                         {maxCharPath}
-                    </Typography>
+                    </span>
                     <IconButton aria-label="copy" size="small"
                         onClick={(e)=>{
                             navigator.clipboard.writeText(path)
@@ -86,7 +86,7 @@ const makeColumns = (onSelectImageIndex) =>
             {},
             {
                 cell: ({ cell, row }) => {
-                    return <Typography style={{minWidth:"5vw"}}>{row.original[k]}</Typography>;
+                    return <span style={{minWidth:"5vw"}}>{row.original[k]}</span>;
                 }
             },
             defs[i]
