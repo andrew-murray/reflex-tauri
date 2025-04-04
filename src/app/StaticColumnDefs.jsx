@@ -28,6 +28,12 @@ const StaticColumnDefs = [
         plottable: true
     },
     {
+        accessorKey:"com_adobe_dateTime",
+        header: "Date/Time",
+        filterable: false,
+        plottable: false
+    },
+    {
         accessorKey:"com_adobe_imageFileDimensions",
         header: "Raw Dims",
         filterable: false,
@@ -92,12 +98,6 @@ const StaticColumnDefs = [
         header: "Flash",
         filterable: true,
         plottable: true
-    },
-    {
-        accessorKey:"com_adobe_dateTime",
-        header: "Date/Time",
-        filterable: false,
-        plottable: false
     }
 ];
 

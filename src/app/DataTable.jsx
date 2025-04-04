@@ -6,6 +6,10 @@ import Typography from '@mui/material/Typography';
 import TableUI from "./TableUI";
 import StaticColumnDefs from "./StaticColumnDefs";
 
+import IconButton from '@mui/material/IconButton';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import SlideshowIcon from '@mui/icons-material/Slideshow';
+
 // todo: different cells can have different heights
 // I presume it's due to the filepath/lens? overflowing the line
 // this is annoying, how best to fix this?
@@ -25,13 +29,34 @@ const makeColumns = (onSelectImageIndex) =>
         {cell : ({cell, row}) => {
             const path = row.original["com_adobe_absoluteFilepath"];
             const image_id = row.original["imageid"];
-            return <Button onClick={()=>{
-                onSelectImageIndex(row.index);
-            }}>
-                <Typography>
-                    {path}
-                </Typography>
-            </Button>
+            let reducedPath = path;
+            if(path.includes("/") || path.includes("\\"))
+            {
+                // split on sequences of "\\" or "/" of any length
+                // and get last element
+                reducedPath = path.split(/[\\\/]+/).slice(-1)[0];
+            }
+            const maxLength = 16;
+            const maxCharPath = reducedPath.length > maxLength ? reducedPath.slice(0,maxLength-3) + "..." : reducedPath;
+            return <React.Fragment>
+                <div style={{display: "flex"}}>
+                    <Typography title={path}>
+                        {maxCharPath}
+                    </Typography>
+                    <IconButton aria-label="copy" size="small"
+                        onClick={(e)=>{
+                            navigator.clipboard.writeText(path)
+                        }}
+                    >
+                      <ContentCopyIcon fontSize="inherit" />
+                    </IconButton>
+                    <IconButton aria-label="slideshow" size="small"
+                        onClick={()=>{onSelectImageIndex(row.index);}}
+                    >
+                      <SlideshowIcon fontSize="inherit" />
+                    </IconButton>
+                </div>
+            </React.Fragment>
         }}
     );
 
@@ -46,6 +71,7 @@ const makeColumns = (onSelectImageIndex) =>
             return <Rating
                 value={ ratingVal === "" ? 0 : ratingVal}
                 readOnly
+                size="small"
                 disabled={ratingVal === "" ? true : undefined}
             />
         }}
@@ -60,7 +86,7 @@ const makeColumns = (onSelectImageIndex) =>
             {},
             {
                 cell: ({ cell, row }) => {
-                    return <Typography style={{minWidth:"7vw"}}>{row.original[k]}</Typography>;
+                    return <Typography style={{minWidth:"5vw"}}>{row.original[k]}</Typography>;
                 }
             },
             defs[i]
