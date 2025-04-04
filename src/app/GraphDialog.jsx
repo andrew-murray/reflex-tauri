@@ -66,17 +66,23 @@ export default function GraphDialog({images, metricKey, handleClose, color}) {
   >
     <DialogTitle id="graph-dialog-title">
       {title}
-      <IconButton
-        onClick={handleClose}
-      >
-        <ClearIcon />
-      </IconButton>
+    </DialogTitle>
+    <div style={{position: "absolute", right: 54, top: 8}}>
       <GraphPickerWidget
         graphMode={graphMode}
         setGraphMode={setGraphMode}
+        style={{paddingRight: "2rem"}}
       />
-    </DialogTitle>
-    <DialogContent style={{width: 500, height: 500, padding: 10}}>
+    </div>
+    <div  style={{position: "absolute", right: 8, top: 8}}>
+      <IconButton
+        onClick={handleClose}
+       
+      >
+        <ClearIcon />
+      </IconButton>
+    </div>
+    <DialogContent dividers style={{width: 500, height: 500, padding: 10}}>
       {graphMode === GraphModeEnum.Bar && 
         <Graphs.BarGraphForDialog
           data={images}
