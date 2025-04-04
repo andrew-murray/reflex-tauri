@@ -36,6 +36,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import {GetFormattedData} from "./Graphs";
 import ListItem from '@mui/material/ListItem';
 import List from '@mui/material/List';
+import ButtonGroup from '@mui/material/ButtonGroup';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
@@ -251,7 +252,7 @@ const TableUI = ({
       },
       []
     );
-    console.log({palette:theme.palette})
+
     return (
       <Paper elevation={2} style={{ padding: "0 0 1rem 0"}}>
         <Box>
@@ -261,7 +262,8 @@ const TableUI = ({
                 {getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id} style={{backgroundColor: theme.palette.background.selected}}>
                     {headerGroup.headers.map((header) => {
-                      return <TableCell key={header.id} className="text-sm font-cambon">
+                      return <TableCell key={header.id} className="text-sm font-cambon" style={{padding: "0rem 1rem 0 1rem"}}>
+                        <div>
                         {header.isPlaceholder
                           ? null :
                           flexRender(
@@ -269,31 +271,49 @@ const TableUI = ({
                             header.getContext()
                           )
                         }
-                        {(!header.isPlaceholder) && <Fragment>
-                          {header.column.columnDef.plottable
-                          && <IconButton
+                        </div>
+                        
+                        {(!header.isPlaceholder) && <div style={{display: "flex"}}>
+                        <div style={{flexGrow: 1}} />
+                        <ButtonGroup variant="outlined" aria-label="Loading button group">
+                          {<Button
                             onClick={()=>onSelectMetric(header.column.columnDef.accessorKey)}
+                            disabled={header.column.columnDef.plottable ? undefined : true}
+                            style={{ borderRadius: 0 }}
                           >
-                            <AddchartIcon />
-                          </IconButton>
+                            {header.column.columnDef.plottable ? 
+                                <AddchartIcon fontSize="small"/> : 
+                                <div style={{height: "1em", width: 1}} />}
+                          </Button>
+                          }
+                          {!header.column.columnDef.filterable
+                          && <Button
+                                disabled
+                                style={{ borderRadius: 0 }}
+                              >
+                                <div style={{height: "1em", width: 1}} />
+                              </Button>
                           }
                           {header.column.columnDef.filterable 
                           && filtersByMetric[header.column.columnDef.accessorKey] === undefined
-                          && <IconButton
+                          && <Button
                                 onClick={()=>setActiveFilterDialog(header.column.columnDef.accessorKey)}
+                                style={{ borderRadius: 0 }}
                               >
-                                <FilterAltIcon />
-                              </IconButton>
+                                <FilterAltIcon fontSize="small"/>
+                              </Button>
                           }
                           {header.column.columnDef.filterable 
                           && filtersByMetric[header.column.columnDef.accessorKey] !== undefined
-                          && <IconButton
+                          && <Button
                                 onClick={()=>clearFiltersForMetric(header.column.columnDef.accessorKey)}
+                                style={{ borderRadius: 0 }}
                               >
-                                <FilterAltOffIcon />
-                              </IconButton>
+                                <FilterAltOffIcon size="small"/>
+                              </Button>
                           }
-                        </Fragment>
+                        </ButtonGroup>
+                        </div>
                         }
                       </TableCell>
                     })}
