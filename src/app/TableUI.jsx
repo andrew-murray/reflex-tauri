@@ -263,58 +263,52 @@ const TableUI = ({
                   <TableRow key={headerGroup.id} style={{backgroundColor: theme.palette.background.selected}}>
                     {headerGroup.headers.map((header) => {
                       return <TableCell key={header.id} className="text-sm font-cambon" style={{padding: "0rem 1rem 0 1rem"}}>
-                        <div>
-                        {header.isPlaceholder
-                          ? null :
-                          flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )
-                        }
+                        <div style={{display: "flex"}}>
+                          <div style={{flexGrow: 1, alignContent: "center", paddingRight: "1rem"}}>
+                            {header.isPlaceholder
+                              ? null :
+                              flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )
+                            }
+                          </div>
+                          <div style={{display: "flex"}}>
+                            {(!header.isPlaceholder) && 
+                            <div style={{display: "flex"}}>
+                              <div style={{flexGrow: 1}} />
+                              <ButtonGroup variant="outlined" aria-label="Loading button group">
+                                  <Button
+                                    onClick={()=>onSelectMetric(header.column.columnDef.accessorKey)}
+                                    disabled={header.column.columnDef.plottable ? undefined : true}
+                                    style={{ borderRadius: 0, padding: 4}}
+                                  >
+                                    <AddchartIcon fontSize="small"/>
+                                  </Button>
+                                  <Button
+                                    disabled={header.column.columnDef.filterable? undefined: true}
+                                    onClick={()=>{
+                                      if(filtersByMetric[header.column.columnDef.accessorKey] === undefined)
+                                      {
+                                        setActiveFilterDialog(header.column.columnDef.accessorKey)
+                                      }
+                                      else
+                                      {
+                                        clearFiltersForMetric(header.column.columnDef.accessorKey)
+                                      }
+                                    }}
+                                    style={{ borderRadius: 0, padding: 4 }}
+                                  >
+                                    {filtersByMetric[header.column.columnDef.accessorKey] === undefined ? 
+                                      <FilterAltIcon fontSize="small"/>
+                                      : <FilterAltOffIcon size="small"/>
+                                    }
+                                </Button>
+                              </ButtonGroup>
+                            </div>
+                            }
+                          </div>
                         </div>
-                        
-                        {(!header.isPlaceholder) && <div style={{display: "flex"}}>
-                        <div style={{flexGrow: 1}} />
-                        <ButtonGroup variant="outlined" aria-label="Loading button group">
-                          {<Button
-                            onClick={()=>onSelectMetric(header.column.columnDef.accessorKey)}
-                            disabled={header.column.columnDef.plottable ? undefined : true}
-                            style={{ borderRadius: 0 }}
-                          >
-                            {header.column.columnDef.plottable ? 
-                                <AddchartIcon fontSize="small"/> : 
-                                <div style={{height: "1em", width: 1}} />}
-                          </Button>
-                          }
-                          {!header.column.columnDef.filterable
-                          && <Button
-                                disabled
-                                style={{ borderRadius: 0 }}
-                              >
-                                <div style={{height: "1em", width: 1}} />
-                              </Button>
-                          }
-                          {header.column.columnDef.filterable 
-                          && filtersByMetric[header.column.columnDef.accessorKey] === undefined
-                          && <Button
-                                onClick={()=>setActiveFilterDialog(header.column.columnDef.accessorKey)}
-                                style={{ borderRadius: 0 }}
-                              >
-                                <FilterAltIcon fontSize="small"/>
-                              </Button>
-                          }
-                          {header.column.columnDef.filterable 
-                          && filtersByMetric[header.column.columnDef.accessorKey] !== undefined
-                          && <Button
-                                onClick={()=>clearFiltersForMetric(header.column.columnDef.accessorKey)}
-                                style={{ borderRadius: 0 }}
-                              >
-                                <FilterAltOffIcon size="small"/>
-                              </Button>
-                          }
-                        </ButtonGroup>
-                        </div>
-                        }
                       </TableCell>
                     })}
                   </TableRow>
