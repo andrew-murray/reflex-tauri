@@ -63,6 +63,7 @@ export default function GraphDialog({images, metricKey, handleClose, color}) {
     onClose={handleClose}
     aria-labelledby="alert-dialog-title"
     aria-describedby="alert-dialog-description"
+    style={{overflow: "hidden"}}
   >
     <DialogTitle id="graph-dialog-title">
       {title}
@@ -82,7 +83,7 @@ export default function GraphDialog({images, metricKey, handleClose, color}) {
         <ClearIcon />
       </IconButton>
     </div>
-    <DialogContent dividers style={{width: 500, height: 500, padding: 10}}>
+    <DialogContent dividers style={{width: 500, height: 500, padding: 10, overflow: "hidden"}}>
       {graphMode === GraphModeEnum.Bar && 
         <Graphs.BarGraphForDialog
           data={images}
