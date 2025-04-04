@@ -40,10 +40,12 @@ import List from '@mui/material/List';
 import ButtonGroup from '@mui/material/ButtonGroup';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
+import Switch from '@mui/material/Switch';
 import ListItemText from '@mui/material/ListItemText';
 import Checkbox from '@mui/material/Checkbox';
 import Typography from '@mui/material/Typography';
 import StaticColumnDefs from "./StaticColumnDefs";
+import ListSubheader from '@mui/material/ListSubheader';
 
 
 // Styles with styled-component
@@ -119,61 +121,64 @@ export function FilterDialog({images, filteredImages, metricKey, filtersForMetri
   >
     <DialogTitle id="graph-dialog-title">
       Filter by {title}
-      <IconButton
-        onClick={handleClose}
-      >
-        <ClearIcon />
-      </IconButton>
     </DialogTitle>
-    <DialogContent style={{width: 500, height: 500, padding: 10}}>
-      <List>
-        {names.map(name => {
-          return <ListItem key={name}>
-            <ListItemIcon>
-              <Checkbox
-                checked={filters === null || filters.includes(name)}
-                onChange={(event)=>{
-                  setFilters(
-                    prevFilters => {
-                      if (event.target.checked)
-                      {
-                        // prevFilters might be null
-                        const withElement = (prevFilters || []).concat([name]);
-                        if (withElement.length === names.length)
+    <IconButton
+      onClick={handleClose}
+      style={{position: "absolute", right: 8, top: 8}}
+    >
+      <ClearIcon />
+    </IconButton>
+    <DialogContent dividers style={{padding: 10, minWidth: 300, maxHeight: 600}}>
+    <div style={{display: "flex", justifyContent: "center"}}>
+      <Paper style={{width: "100%"}}>
+        <List style={{width: "100%", overflowY: "auto"}}>
+          {names.map(name => {
+            return <ListItem key={name}>
+                <ListItemIcon>
+                <Checkbox
+                  edge="end"
+                  checked={filters === null || filters.includes(name)}
+                  onChange={(event)=>{
+                    setFilters(
+                      prevFilters => {
+                        if (event.target.checked)
                         {
-                          // todo: I'm a little worried, we're not using Sets...
-                          return null;
+                          // prevFilters might be null
+                          const withElement = (prevFilters || []).concat([name]);
+                          if (withElement.length === names.length)
+                          {
+                            // todo: I'm a little worried, we're not using Sets...
+                            return null;
+                          }
+                          else
+                          {
+                            return withElement;
+                          }
                         }
-                        else
+                        else // event.target.checked has to be false, therefore remove from the filters
                         {
-                          return withElement;
+                          return (prevFilters || names).filter(x => x !== name);
                         }
                       }
-                      else // event.target.checked has to be false, therefore remove from the filters
-                      {
-                        return (prevFilters || names).filter(x => x !== name);
-                      }
-                    }
-                  )
-                }}
-                inputProps={{ 'aria-label': 'controlled' }}
-              />
-              <Typography>
-                {name}
-              </Typography>
-            </ListItemIcon>
-          </ListItem>
-        })}
-      </List>
-      <IconButton
-        onClick={()=>{ 
-          onSetFiltersForMetric(metricKey, filters === null ? undefined : filters);
-          handleClose();
-        }}
-      >
-        <DoneIcon />
-      </IconButton>
+                    )
+                  }}
+                  inputProps={{ 'aria-label': 'controlled' }}
+                />
+                </ListItemIcon>
+                <ListItemText primary={name} />
+            </ListItem>
+          })}
+        </List>
+      </Paper>
+    </div>
     </DialogContent>
+    <DialogActions>
+      <Button onClick={handleClose}>Cancel</Button>
+      <Button onClick={()=>{ 
+        onSetFiltersForMetric(metricKey, filters === null ? undefined : filters);
+        handleClose();
+      }}>Apply</Button>
+    </DialogActions>
   </Dialog>
 };
 
