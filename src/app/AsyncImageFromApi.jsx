@@ -53,16 +53,24 @@ export default function AsyncImageFromApi({image, imageStyle, orientation, width
     "BC": "rotate90"
   };
   const oClass = oClassMap[orientation];
+  const rotatedWidth = oClass !== undefined ? height: width;
+  const rotatedHeight = oClass !== undefined ? width: height;
 
   return <React.Fragment>
-    {imgState === null && <Skeleton variant="rectangular" width={width} height={height} /> }
+    {imgState === null && <Skeleton variant="rectangular"
+      width={rotatedWidth} 
+      height={rotatedHeight} 
+    /> }
     {imgState != null && <img
       src={imgState}
       className={oClass}
       style={Object.assign(
         {},
         imageStyle,
-        {width, height}
+        {
+          width: rotatedWidth, 
+          height: rotatedHeight
+        }
       )}
     />}
   </React.Fragment>
