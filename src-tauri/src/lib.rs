@@ -1,6 +1,6 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use tauri::{ipc::Response};
-use anyhow::{Result, Context};
+use anyhow::Result;
 use tauri_plugin_fs::FsExt;
 use std::env;
 use std::fs;
@@ -323,26 +323,6 @@ fn get_image_for_id(state: tauri::State<AppState>, image_id: String, image_path:
 #[tauri::command]
 fn get_app_state(state: tauri::State<AppState>) -> CommandResult<ConfDirs> {
    return Ok(state.conf_dirs.clone());
-}
-
-static ASCII_LOWER: [char; 26] = [
-    'a', 'b', 'c', 'd', 'e', 
-    'f', 'g', 'h', 'i', 'j', 
-    'k', 'l', 'm', 'n', 'o',
-    'p', 'q', 'r', 's', 't', 
-    'u', 'v', 'w', 'x', 'y', 
-    'z',
-];
-
-fn allow_all_ascii_drives(app : &mut tauri::App)
-{
-    let scope = app.fs_scope();
-    for dletter in ASCII_LOWER {
-        // don't hate me, it's really fiddly to get access to what are valid drives,
-        // and we just need to configure the fs:plugin not to reject requests
-        // it's very possible that this won't matter at all
-        let _ = scope.allow_directory(dletter.to_string() + ":", true);
-    }
 }
 
 fn allow_detected_drives(app : &mut tauri::App)
