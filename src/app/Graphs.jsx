@@ -86,10 +86,15 @@ export function BarGraphForDialog({data, dataKey, color})
 }
 
 // TODO: Make API for the graphs match? Data is currently not compatible
-export function BarGraph({data, dataKey, color, logMode, ratingMode})
+export function BarGraph({data, dataKey, color, logMode, freqMode, ratingMode})
 {
   const title = titles[dataKey] || dataKey;
-
+  console.log(
+  {
+    freqMode,
+    ratingMode,
+    logMode
+  })
   return <ResponsiveContainer width="100%" height="100%">
     <BarChart
       data={data}
@@ -114,7 +119,7 @@ export function BarGraph({data, dataKey, color, logMode, ratingMode})
       }
       {ratingMode !== null && ratingMode !== undefined && ratingMode.map((r,index) => <Bar
         stackId="a"
-        dataKey={`ratingCounts.${r}`} fill={ScoreColorPalette[ (4-index) % ScoreColorPalette.length]} activeBar={<Rectangle fill="blue" stroke="blue" />}
+        dataKey={ freqMode ? `ratingFreqs.${r}` : `ratingCounts.${r}`} fill={ScoreColorPalette[ (4-index) % ScoreColorPalette.length]} activeBar={<Rectangle fill="blue" stroke="blue" />}
         name={`rating=${r}`}
       />)}
       {ratingMode !== null && ratingMode !== undefined && 

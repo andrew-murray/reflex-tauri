@@ -18,7 +18,7 @@ import ToggleButton from '@mui/material/ToggleButton';
 
 // TODO: Handle null/missing data, it's odd it doesn't blow up currently
 
-function GraphSettingsPanel({logSelected, onSetLogMode, ratingMode, onSetRatingMode})
+function GraphSettingsPanel({logSelected, onSetLogMode, freqSelected, onSetFreqMode, ratingMode, onSetRatingMode})
 {
     // TODO: Replace "logarithmic" with an icon
     return <List style={{paddingLeft: "1em", paddingRight: "1em"}}>
@@ -49,10 +49,19 @@ function GraphSettingsPanel({logSelected, onSetLogMode, ratingMode, onSetRatingM
                 rating
             </ToggleButton>
         </ListItem>
+        <ListItem key="freq-mode"  disablePadding>
+            <ToggleButton
+              selected={freqSelected}
+              onChange={() => onSetFreqMode((prevSelected) => !prevSelected)}
+              style={{width: "100%"}}
+            >
+                rating %
+            </ToggleButton>
+        </ListItem>
     </List>
 }
 
-export default function GraphPanel({images, logSelected, onSetLogMode, ratingMode, onSetRatingMode}) {
+export default function GraphPanel({images, logSelected, onSetLogMode, freqSelected, onSetFreqMode, ratingMode, onSetRatingMode}) {
     // graphs are going to be [shutter, aperture, ISO] naturally
     const shutter = fields.shutter;
     const aperture = fields.aperture;
@@ -111,11 +120,20 @@ export default function GraphPanel({images, logSelected, onSetLogMode, ratingMod
 
                     // TODO: parser should be allowed to throw here,
                     // and we should handle it
+                    // choose to say the frequency at-this-count is zero
+                    // so that it's not plotted, even though strictly it's mathematically "undefined"
+                    const ratingFreqs = Object.fromEntries(
+                        Object.entries(v.ratingCounts).map(
+                            ([rk, rv]) => [rk, v.count === 0 ? 0 : 100 * (rv/v.count)]
+                        )
+                    );
+
                     outputFieldValues.push({
                         name: v.name,
                         value: parserForField(v.name),
                         count: v.count,
-                        ratingCounts: v.ratingCounts
+                        ratingCounts: v.ratingCounts,
+                        ratingFreqs
                     });
                 }
                 if (field === shutter)
@@ -152,6 +170,7 @@ export default function GraphPanel({images, logSelected, onSetLogMode, ratingMod
                     dataKey={name[shutter]}
                     color="#c0ea02"
                     logMode={logSelected ? true : undefined}
+                    freqMode={freqSelected ? true : undefined}
                     ratingMode={ratingMode}
                 />
             </Paper>
@@ -163,6 +182,7 @@ export default function GraphPanel({images, logSelected, onSetLogMode, ratingMod
                     dataKey={name[aperture]}
                     color="#eac002"
                     logMode={logSelected ? true : undefined}
+                    freqMode={freqSelected ? true : undefined}
                     ratingMode={ratingMode}
                 />
             </Paper>
@@ -174,6 +194,7 @@ export default function GraphPanel({images, logSelected, onSetLogMode, ratingMod
                     dataKey={name[iso]}
                     color="#4090c0"
                     logMode={logSelected ? true : undefined}
+                    freqMode={freqSelected ? true : undefined}
                     ratingMode={ratingMode}
                 />
             </Paper>
@@ -182,6 +203,8 @@ export default function GraphPanel({images, logSelected, onSetLogMode, ratingMod
                 <GraphSettingsPanel 
                     logSelected={logSelected}
                     onSetLogMode={onSetLogMode}
+                    freqSelected={freqSelected}
+                    onSetFreqMode={onSetFreqMode}
                     ratingMode={ratingMode}
                     onSetRatingMode={onSetRatingMode}
                 />

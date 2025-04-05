@@ -205,6 +205,7 @@ export default function Home() {
   // ratingsToGraph a lot more involved at some point
   const [logMode, setLogMode] = React.useState(false);
   const [ratingsToGraph, setRatingsToGraph] = React.useState(null);
+  const [freqMode, setFreqMode] = React.useState(false);
 
   const folderData = React.useMemo( ()=> {
       return computeFolderAndFilesystemPathsFromImages(images);
@@ -575,6 +576,8 @@ export default function Home() {
                 onSetLogMode={setLogMode}
                 ratingMode={ratingsToGraph}
                 onSetRatingMode={setRatingsToGraph}
+                freqSelected={freqMode}
+                onSetFreqMode={setFreqMode}
               />
             </div>
           }
