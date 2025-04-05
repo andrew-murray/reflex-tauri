@@ -89,7 +89,7 @@ export function BarGraphForDialog({data, dataKey, color})
 export function BarGraph({data, dataKey, color, logMode, freqMode, ratingMode})
 {
   const title = titles[dataKey] || dataKey;
-  const floatFormatter = (value, name, props) => {
+  const percentFormatter = (value, name, props) => {
     // the formatter trims our string so this padStart doesn't work!
     return value.toFixed(0) + "%"; // .padStart(6, ' ');
   };
@@ -112,10 +112,10 @@ export function BarGraph({data, dataKey, color, logMode, freqMode, ratingMode})
       </XAxis>
       <YAxis scale={logMode ? customLogScale : "auto"}/>
       <Tooltip 
-        formatter={(ratingMode && freqMode) ? floatFormatter : undefined}
+        formatter={(ratingMode && freqMode) ? percentFormatter : undefined}
       />
       {(ratingMode === undefined || ratingMode === null) && 
-        <Bar stackId="a" dataKey={"count"} fill={color} activeBar={<Rectangle fill="pink" stroke="blue" />} />
+        <Bar stackId="a" dataKey={"count"} name={"images"} fill={color} activeBar={<Rectangle fill="pink" stroke="blue" />} />
       }
       {ratingMode !== null && ratingMode !== undefined && ratingMode.map((r,index) => <Bar
         stackId="a"
