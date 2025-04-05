@@ -34,18 +34,6 @@ const StaticColumnDefs = [
         plottable: false
     },
     {
-        accessorKey:"com_adobe_imageFileDimensions",
-        header: "Raw Dims",
-        filterable: false,
-        plottable: false
-    },
-    {
-        accessorKey:"com_adobe_imageCroppedDimensions",
-        header: "Crop Dims",
-        filterable: false,
-        plottable: false
-    },
-    {
         accessorKey:"com_adobe_model",
         header: "Camera",
         filterable: true,
@@ -99,6 +87,19 @@ const StaticColumnDefs = [
         filterable: true,
         plottable: true
     }
+    // the feature set for these columns is too limited/poor that I think it's better to remove them
+    // {
+    //     accessorKey:"com_adobe_imageFileDimensions",
+    //     header: "Raw Dims",
+    //     filterable: false,
+    //     plottable: false
+    // },
+    // {
+    //     accessorKey:"com_adobe_imageCroppedDimensions",
+    //     header: "Crop Dims",
+    //     filterable: false,
+    //     plottable: false
+    // },
 ];
 
 export default StaticColumnDefs;
