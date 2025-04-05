@@ -126,7 +126,7 @@ function computeFolderAndFilesystemPathsFromImages(images)
   return {
     filesystem: filesystemLevels,
     filesystemQueryCache,
-    folders
+    folders: [...folders].toSorted()
   };
 }
 
