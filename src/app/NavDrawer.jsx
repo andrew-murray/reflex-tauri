@@ -259,9 +259,8 @@ function NavDrawer({
       sx={{ display: 'block', minHeight: 48}} >
         <Paper>
           <div style={active ? {backgroundColor: theme.palette.primary.main} : undefined}>
-            <ListItemButton>
+            <ListItemButton onClick={handleDrawerOpen}>
               <ListItemIcon
-                onClick={handleDrawerOpen}
                 sx={[
                   {
                     minWidth: 0,
