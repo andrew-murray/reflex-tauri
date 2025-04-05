@@ -89,12 +89,10 @@ export function BarGraphForDialog({data, dataKey, color})
 export function BarGraph({data, dataKey, color, logMode, freqMode, ratingMode})
 {
   const title = titles[dataKey] || dataKey;
-  console.log(
-  {
-    freqMode,
-    ratingMode,
-    logMode
-  })
+  const floatFormatter = (value, name, props) => {
+    // the formatter trims our string so this padStart doesn't work!
+    return value.toFixed(0) + "%"; // .padStart(6, ' ');
+  };
   return <ResponsiveContainer width="100%" height="100%">
     <BarChart
       data={data}
@@ -113,7 +111,9 @@ export function BarGraph({data, dataKey, color, logMode, freqMode, ratingMode})
         />
       </XAxis>
       <YAxis scale={logMode ? customLogScale : "auto"}/>
-      <Tooltip />
+      <Tooltip 
+        formatter={(ratingMode && freqMode) ? floatFormatter : undefined}
+      />
       {(ratingMode === undefined || ratingMode === null) && 
         <Bar stackId="a" dataKey={"count"} fill={color} activeBar={<Rectangle fill="pink" stroke="blue" />} />
       }
