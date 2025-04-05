@@ -565,7 +565,7 @@ export default function Home() {
             handleDrawerOpen={handleDrawerOpen}
           />
         }
-        <MainMinusDrawer open={navOpen} style={{textAlign: "center",   display: "flex", alignItems: "center", justifyContent: "center", padding: "0.5vw"}}>
+        <MainMinusDrawer open={navOpen} style={{textAlign: "center",   display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem"}}>
           <div style={{width: "100%", minHeight: "80vh", margin: "auto", alignItems: "center"}}>
           {(images.length !== 0 && !inProgress) &&
             <div style={{width: "100%", height: "40vh"}}>
