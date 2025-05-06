@@ -7,11 +7,9 @@
   ],
   "permissions": [
     "core:default",
-    "opener:default",
-    "opener:default",
+    "dialog:default",
     "fs:default",
     "fs:allow-read-file",
-    "dialog:default",
-    "dialog:default"
+    "opener:allow-default-urls"
   ]
 }
