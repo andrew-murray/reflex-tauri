@@ -11,6 +11,7 @@ use glob::glob;
 use sysinfo::{
     Disks
 };
+use tauri::menu::{CheckMenuItemBuilder, MenuBuilder, SubmenuBuilder};
 use sqlx::ConnectOptions;
 use sqlx::sqlite::{SqliteConnectOptions};
 use std::collections::HashMap;
@@ -355,6 +356,54 @@ pub fn run() {
             // allowed the given directory
             // allow_all_ascii_drives(app);
             allow_detected_drives(app);
+
+            let file_menu = SubmenuBuilder::new(app, "File")
+                .text("open folder", "Open Folder")
+                .text("open cat", "Open Lightroom Catalog")
+                .separator()
+                .text("settings", "Settings")
+                .separator()
+                .text("quit", "Quit")
+                .build()?;
+            let help_menu = SubmenuBuilder::new(app, "Help")
+                .text("help", "Documentation")
+                .text("about", "About")
+                .build()?;
+            let menu = MenuBuilder::new(app)
+                .items(&[&file_menu, &help_menu])
+                .build()?;
+            app.set_menu(menu)?;
+
+
+            app.on_menu_event(move |app_handle: &tauri::AppHandle, event| {
+
+                println!("menu event: {:?}", event.id());
+
+                match event.id().0.as_str() {
+                    "open folder" => {
+                        println!("expected but unimplemented event with id {:?}", event.id());
+                    }
+                    "open cat" => {
+                        println!("expected but unimplemented event with id {:?}", event.id());
+                    }
+                    "settings" => {
+                        println!("expected but unimplemented event with id {:?}", event.id());
+                    }
+                    "quit" => {
+                        app_handle.exit(0);
+                    }
+                    "help" => {
+                        println!("expected but unimplemented event with id {:?}", event.id());
+                    }
+                    "about" => {
+                        println!("expected but unimplemented event with id {:?}", event.id());
+                    }
+                    _ => {
+                        println!("expected but unimplemented event with id {:?}", event.id());
+                    }
+                }
+            });
+
             // let _ = scope.allow_directory("/", true);
             // fixme: check os?
             // dbg!(scope.allowed());
