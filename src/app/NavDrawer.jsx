@@ -324,26 +324,13 @@ function NavDrawer({
       active: false,
       Component: () => { return ((theme.direction === 'rtl') ^ open) ?  <ChevronLeftIcon /> : <ChevronRightIcon />;},
       onClick: open ? handleDrawerClose : handleDrawerOpen
-    },
-    {
-      text: 'Menu',
-      active: false,
-      Component: () => <MenuIcon />,
-      onClick: ()=>{} // nothing bound just yet
     }
   ];
 
   return <StyledDrawer variant="permanent" open={open}>
     {open && 
       <DrawerHeader>
-        {open && 
-          <React.Fragment>
-            <IconButton>
-              <MenuIcon />
-            </IconButton>
-            <div style={{flexGrow: 1}} />
-          </React.Fragment>
-        }
+        <div style={{flexGrow: 1}} />
         <IconButton onClick={open ? handleDrawerClose : handleDrawerOpen}>
           {((theme.direction === 'rtl') ^ open) ?  <ChevronLeftIcon /> : <ChevronRightIcon />}
         </IconButton>
