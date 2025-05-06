@@ -1,39 +1,40 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-use tauri::{ipc::Response};
 use anyhow::Result;
-use tauri_plugin_fs::FsExt;
+use futures::executor::block_on;
+use glob::glob;
+use serde::{Deserialize, Serialize, Serializer};
+use sqlx::sqlite::SqliteConnectOptions;
+use sqlx::ConnectOptions;
+use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
-use glob::glob;
-use sysinfo::{
-    Disks
-};
-use tauri::menu::{CheckMenuItemBuilder, MenuBuilder, SubmenuBuilder};
-use sqlx::ConnectOptions;
-use sqlx::sqlite::{SqliteConnectOptions};
-use std::collections::HashMap;
-use futures::executor::block_on;
+use sysinfo::Disks;
+use tauri::ipc::Response;
+use tauri::menu::{MenuBuilder, SubmenuBuilder};
 use tauri::Manager;
-use serde::{Serialize, Deserialize, Serializer};
+use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
+use tauri_plugin_fs::FsExt;
+use tauri_plugin_opener::OpenerExt;
 mod lrprev;
 
 struct AppState {
     conf_dirs: ConfDirs,
-    image_id_to_image: HashMap<u64, PreviewData>
+    image_id_to_image: HashMap<u64, PreviewData>,
 }
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-where P: AsRef<Path>, {
+where
+    P: AsRef<Path>,
+{
     let file = File::open(filename)?;
     Ok(io::BufReader::new(file).lines())
 }
 
-fn get_library_path_from_config_file(adobe_config_path: &str) -> Result<String, ()>
-{
-   let path_exists_result = fs::exists(&adobe_config_path);
+fn get_library_path_from_config_file(adobe_config_path: &str) -> Result<String, ()> {
+    let path_exists_result = fs::exists(&adobe_config_path);
     if !path_exists_result.is_ok() {
         println!("{}", "unimp 2");
         unimplemented!();
@@ -54,7 +55,7 @@ fn get_library_path_from_config_file(adobe_config_path: &str) -> Result<String, 
                 let parts_collected = parts.collect::<Vec<&str>>();
                 // if the path contains an equals let's rebuild it
                 // TODO: Stripping the path of quotes should be redundant/confusing
-                let library_path : String = parts_collected[1..]
+                let library_path: String = parts_collected[1..]
                     .join("=")
                     .trim()
                     .trim_end_matches(",")
@@ -74,8 +75,7 @@ struct PreviewData {
     orientation: Option<String>,
 }
 
-async fn do_sql(preview_db_path: &str) -> HashMap<u64, PreviewData>
-{
+async fn do_sql(preview_db_path: &str) -> HashMap<u64, PreviewData> {
     let connection = SqliteConnectOptions::new()
         .read_only(true)
         .filename(preview_db_path);
@@ -84,21 +84,22 @@ async fn do_sql(preview_db_path: &str) -> HashMap<u64, PreviewData>
         .fetch_all(&mut db)
         .await;
     let mut image_id_to_image = HashMap::new();
-    if qresult.is_ok()
-    {
+    if qresult.is_ok() {
         let qr = qresult.unwrap();
         for image in qr {
-            image_id_to_image.insert(image.imageId as u64,PreviewData{ 
-                image_id: image.imageId as u64, 
-                digest: image.digest, 
-                uuid: image.uuid,
-                orientation: image.orientation
-            });
+            image_id_to_image.insert(
+                image.imageId as u64,
+                PreviewData {
+                    image_id: image.imageId as u64,
+                    digest: image.digest,
+                    uuid: image.uuid,
+                    orientation: image.orientation,
+                },
+            );
         }
-    }
-    else {
+    } else {
         println!("{}", "all is not wel");
-    }   
+    }
     return image_id_to_image;
 }
 
@@ -108,17 +109,17 @@ struct ConfDirs {
     cat_path: String,
     metadata_db_path: String,
     preview_db_path: String,
-    preview_root: String
+    preview_root: String,
 }
 
 impl Clone for ConfDirs {
     fn clone(&self) -> Self {
-        ConfDirs{
+        ConfDirs {
             root: self.root.clone(),
             cat_path: self.cat_path.clone(),
             metadata_db_path: self.metadata_db_path.clone(),
             preview_db_path: self.preview_db_path.clone(),
-            preview_root: self.preview_root.clone()
+            preview_root: self.preview_root.clone(),
         }
     }
 }
@@ -131,7 +132,8 @@ fn find_configuration() -> Option<ConfDirs> {
     }
 
     let app_data_dir = app_data_result.unwrap();
-    let preferences_relpath = "Adobe/Lightroom/Preferences/Lightroom Classic CC 7 Preferences.agprefs";  
+    let preferences_relpath =
+        "Adobe/Lightroom/Preferences/Lightroom Classic CC 7 Preferences.agprefs";
     let expected_adobe_prefs = app_data_dir + "/" + preferences_relpath;
     let cat_path = get_library_path_from_config_file(&expected_adobe_prefs);
     if !cat_path.is_ok() {
@@ -141,8 +143,7 @@ fn find_configuration() -> Option<ConfDirs> {
     let cat_path_value = cat_path.unwrap();
     println!("library_path = {}", cat_path_value);
     let cat_parent = Path::new(&cat_path_value).parent();
-    if cat_parent.is_none()
-    {
+    if cat_parent.is_none() {
         return None;
     }
     let cat_directory = cat_parent.unwrap();
@@ -152,56 +153,79 @@ fn find_configuration() -> Option<ConfDirs> {
         return None;
     }
     let helper_paths = helper_glob.unwrap();
-    let mut metadata_db_path : Option<String> = None;
+    let mut metadata_db_path: Option<String> = None;
     for entry in helper_paths {
         if let Ok(candidate_metadata_path) = entry {
-            println!("candidate_metadata_path = {}", candidate_metadata_path.display());
-            metadata_db_path = Some(candidate_metadata_path.into_os_string().into_string().unwrap());
+            println!(
+                "candidate_metadata_path = {}",
+                candidate_metadata_path.display()
+            );
+            metadata_db_path = Some(
+                candidate_metadata_path
+                    .into_os_string()
+                    .into_string()
+                    .unwrap(),
+            );
         }
     }
 
-    let preview_glob = glob(cat_directory.join("*Previews*/previews.db").to_str().unwrap());
+    let preview_glob = glob(
+        cat_directory
+            .join("*Previews*/previews.db")
+            .to_str()
+            .unwrap(),
+    );
     if !preview_glob.is_ok() {
         return None;
     }
 
     let preview_paths = preview_glob.unwrap();
-    let mut preview_db_path : Option<String> = None;
+    let mut preview_db_path: Option<String> = None;
     for entry in preview_paths {
         if let Ok(candidate_preview_path) = entry {
-            println!("candidate_preview_path = {}", candidate_preview_path.display());
-            preview_db_path = Some(candidate_preview_path.into_os_string().into_string().unwrap());
+            println!(
+                "candidate_preview_path = {}",
+                candidate_preview_path.display()
+            );
+            preview_db_path = Some(
+                candidate_preview_path
+                    .into_os_string()
+                    .into_string()
+                    .unwrap(),
+            );
         }
     }
 
-    let preview_db_path_value : String = preview_db_path.unwrap();
-    let preview_root = Path::new(&preview_db_path_value).parent().unwrap().to_str().unwrap().to_owned();
+    let preview_db_path_value: String = preview_db_path.unwrap();
+    let preview_root = Path::new(&preview_db_path_value)
+        .parent()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_owned();
 
-    return Some(ConfDirs{
+    return Some(ConfDirs {
         root: cat_directory.to_str().unwrap().to_owned(),
         cat_path: cat_path_value,
         metadata_db_path: metadata_db_path.unwrap(),
         preview_db_path: preview_db_path_value,
-        preview_root: preview_root
-    })
-
+        preview_root: preview_root,
+    });
 }
 
-fn format_preview_filepath(preview_root: &str, image: &PreviewData) -> String
-{
-    return Path::new(&preview_root).join(
-        &image.uuid[0 .. 1]
-    ).join(
-        &image.uuid[0 .. 4]
-    ).join(
-        image.uuid.clone() + "-" + &image.digest + ".lrprev"
-    ).as_os_str().to_str().unwrap().to_owned();
+fn format_preview_filepath(preview_root: &str, image: &PreviewData) -> String {
+    return Path::new(&preview_root)
+        .join(&image.uuid[0..1])
+        .join(&image.uuid[0..4])
+        .join(image.uuid.clone() + "-" + &image.digest + ".lrprev")
+        .as_os_str()
+        .to_str()
+        .unwrap()
+        .to_owned();
 }
 
 #[tauri::command]
-fn get_preview_path_for_image_id(state: tauri::State<AppState>, image_id: &str) -> Option<String>
-{
-
+fn get_preview_path_for_image_id(state: tauri::State<AppState>, image_id: &str) -> Option<String> {
     // fixme: this code needs to handle errors!
     let image_id_int = image_id.parse::<u64>();
     if !image_id_int.is_ok() {
@@ -212,8 +236,10 @@ fn get_preview_path_for_image_id(state: tauri::State<AppState>, image_id: &str) 
         return None;
     }
 
-    return Some(format_preview_filepath(&state.conf_dirs.preview_root, maybe_image.unwrap()));
-    
+    return Some(format_preview_filepath(
+        &state.conf_dirs.preview_root,
+        maybe_image.unwrap(),
+    ));
 }
 
 // this is pinched from tauri-fs's implementation
@@ -221,7 +247,7 @@ fn get_preview_path_for_image_id(state: tauri::State<AppState>, image_id: &str) 
 #[derive(Debug, thiserror::Error)]
 pub enum ReflexCommandError {
     #[error(transparent)]
-    Anyhow(#[from] anyhow::Error)
+    Anyhow(#[from] anyhow::Error),
 }
 
 impl From<&str> for ReflexCommandError {
@@ -246,21 +272,21 @@ impl Serialize for ReflexCommandError {
 }
 pub type CommandResult<T> = std::result::Result<T, ReflexCommandError>;
 
-
 #[tauri::command]
-fn get_image_for_id(state: tauri::State<AppState>, image_id: String, image_path: String, mode: String) -> CommandResult<tauri::ipc::Response> {
-    if mode != "hi" && mode != "lo"
-    {
-        return Err(
-            ReflexCommandError::from(
-                anyhow::anyhow!("ArgumentError: mode must be 'hi' or 'lo'")
-                    .context(format!("received {}", mode))
-            )
-        );
+fn get_image_for_id(
+    state: tauri::State<AppState>,
+    image_id: String,
+    image_path: String,
+    mode: String,
+) -> CommandResult<tauri::ipc::Response> {
+    if mode != "hi" && mode != "lo" {
+        return Err(ReflexCommandError::from(
+            anyhow::anyhow!("ArgumentError: mode must be 'hi' or 'lo'")
+                .context(format!("received {}", mode)),
+        ));
     }
-    let preview_path = get_preview_path_for_image_id( state, &image_id );
-    if !preview_path.is_some()
-    {
+    let preview_path = get_preview_path_for_image_id(state, &image_id);
+    if !preview_path.is_some() {
         // fallback to loading raw
         // let raw_exists = fs::exists(&image_path).unwrap_or(false);
         // if raw_exists
@@ -271,63 +297,49 @@ fn get_image_for_id(state: tauri::State<AppState>, image_id: String, image_path:
         return Err(ReflexCommandError::from(
             anyhow::anyhow!("Preview does not exist and raw file not accessible")
                 .context(format!("for image_id {}", image_id))
-                .context(format!("for image_path {}", image_path))
+                .context(format!("for image_path {}", image_path)),
         ));
         // }
-
     }
 
     let pps = preview_path.unwrap();
-    let image_result = lrprev::get_jpeg_byte_segments_from_file(
-        &pps    
-    );
+    let image_result = lrprev::get_jpeg_byte_segments_from_file(&pps);
     if image_result.is_ok() {
         let loaded_image_bytes = image_result.unwrap();
-        if loaded_image_bytes.len() == 0
-        {
-            return Err(
-                ReflexCommandError::from(
-                    anyhow::anyhow!("Found no images in preview file")
-                        .context(format!("for image_id {}", image_id))
-                )
-            );
+        if loaded_image_bytes.len() == 0 {
+            return Err(ReflexCommandError::from(
+                anyhow::anyhow!("Found no images in preview file")
+                    .context(format!("for image_id {}", image_id)),
+            ));
         }
-        if mode == "lo"
-        {
-            let bytes : Vec<u8> = loaded_image_bytes.get(0).unwrap().to_owned();
+        if mode == "lo" {
+            let bytes: Vec<u8> = loaded_image_bytes.get(0).unwrap().to_owned();
             return Ok(Response::new(bytes));
         }
-        if mode == "hi"
-        {
-            let bytes = loaded_image_bytes.get(loaded_image_bytes.len() - 1).unwrap().to_owned();
+        if mode == "hi" {
+            let bytes = loaded_image_bytes
+                .get(loaded_image_bytes.len() - 1)
+                .unwrap()
+                .to_owned();
             return Ok(Response::new(bytes));
         }
-        return Err(
-            ReflexCommandError::from(
-                anyhow::anyhow!("Failed to provide image (despite image loaded)")
-                    .context(format!("for image_id {}", image_id))
-            )
-        );
+        return Err(ReflexCommandError::from(
+            anyhow::anyhow!("Failed to provide image (despite image loaded)")
+                .context(format!("for image_id {}", image_id)),
+        ));
+    } else {
+        return Err(ReflexCommandError::from(
+            anyhow::anyhow!("Failed to load image").context(format!("for image_id {}", image_id)),
+        ));
     }
-    else {
-        return Err(
-            ReflexCommandError::from(
-                anyhow::anyhow!("Failed to load image")
-                    .context(format!("for image_id {}", image_id))
-            )
-        );
-    }
-    
 }
-
 
 #[tauri::command]
 fn get_app_state(state: tauri::State<AppState>) -> CommandResult<ConfDirs> {
-   return Ok(state.conf_dirs.clone());
+    return Ok(state.conf_dirs.clone());
 }
 
-fn allow_detected_drives(app : &mut tauri::App)
-{
+fn allow_detected_drives(app: &mut tauri::App) {
     let scope = app.fs_scope();
     // fixme: solve errors!
     let disks = Disks::new_with_refreshed_list();
@@ -341,6 +353,7 @@ fn allow_detected_drives(app : &mut tauri::App)
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_system_info::init())
@@ -349,9 +362,9 @@ pub fn run() {
             // TODO: BLOCKING IS BAD
             // block_on(do_sql(&preview_db_path.unwrap()));
             let image_id_to_image = block_on(do_sql(&conf_dirs.preview_db_path));
-            app.manage(AppState{
+            app.manage(AppState {
                 conf_dirs: conf_dirs,
-                image_id_to_image: image_id_to_image
+                image_id_to_image: image_id_to_image,
             });
             // allowed the given directory
             // allow_all_ascii_drives(app);
@@ -361,8 +374,8 @@ pub fn run() {
                 .text("open folder", "Open Folder")
                 .text("open cat", "Open Lightroom Catalog")
                 .separator()
-                .text("settings", "Settings")
-                .separator()
+                // .text("settings", "Settings")
+                // .separator()
                 .text("quit", "Quit")
                 .build()?;
             let help_menu = SubmenuBuilder::new(app, "Help")
@@ -374,29 +387,42 @@ pub fn run() {
                 .build()?;
             app.set_menu(menu)?;
 
-
-            app.on_menu_event(move |app_handle: &tauri::AppHandle, event| {
-
+            app.on_menu_event(move |app: &tauri::AppHandle, event| {
                 println!("menu event: {:?}", event.id());
 
                 match event.id().0.as_str() {
                     "open folder" => {
-                        println!("expected but unimplemented event with id {:?}", event.id());
+                        let folder_paths = app.dialog().file().blocking_pick_folders();
+                        if folder_paths.is_none() {
+                            println!("{}", "folder_paths was not selected");
+                        } else {
+                            let fpath_strings : Vec<String> = folder_paths.unwrap().into_iter().map( |x| x.to_string() ).collect();
+                            println!("folder_paths: {}",fpath_strings.join(", "));
+                        }
                     }
                     "open cat" => {
-                        println!("expected but unimplemented event with id {:?}", event.id());
+                        let file_path = app.dialog().file().blocking_pick_file();
+                        if file_path.is_none() {
+                            println!("{}", "file_path was not selected");
+                        } else {
+                            println!("file_path: {}", file_path.unwrap());
+                        }
                     }
-                    "settings" => {
-                        println!("expected but unimplemented event with id {:?}", event.id());
-                    }
+                    // "settings" => {
+                    //     println!("expected but unimplemented event with id {:?}", event.id());
+                    // }
                     "quit" => {
-                        app_handle.exit(0);
+                        app.exit(0);
                     }
                     "help" => {
-                        println!("expected but unimplemented event with id {:?}", event.id());
+                        let _res = app.opener().open_url("https://tauri.app",  None::<&str>);
                     }
                     "about" => {
-                        println!("expected but unimplemented event with id {:?}", event.id());
+                        let _ans = app
+                            .dialog()
+                            .message("reflex version: dev.1.2")
+                            .kind(MessageDialogKind::Info)
+                            .blocking_show();
                     }
                     _ => {
                         println!("expected but unimplemented event with id {:?}", event.id());
@@ -409,10 +435,7 @@ pub fn run() {
             // dbg!(scope.allowed());
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![
-            get_app_state,
-            get_image_for_id
-        ])
+        .invoke_handler(tauri::generate_handler![get_app_state, get_image_for_id])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
