@@ -103,7 +103,7 @@ const closedMixin = (theme) => ({
 const DrawerHeader = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'flex-end',
+  minHeight: 48,
   padding: theme.spacing(0, 1),
   // necessary for content to be below app bar
   ...theme.mixins.toolbar,
@@ -158,44 +158,6 @@ const createNodeFromCache = (fullPath, relPath, queryCache) =>
   return baseElement;
 }
 
-/*
-  // this code doesn't work on the AccordionBar
-  // First, we need to disable the buttons
-  // but second you can't have buttons inside the accordion
-  <div style={{flexGrow: 1}} />
-  <IconButton
-    onClick={(e)=>{
-      if(index === 0)
-      {
-        onSelectFolders([]);
-      }
-      else
-      {
-        onSelectFilesystem([]);
-      }
-    }}
-    sx={{
-      pointerEvents: "auto"
-    }}
-    sx={[
-      {
-        minWidth: 0,
-        justifyContent: 'center',
-        padding: "0 5 0 0"
-      },
-      open
-        ? {
-            mr: 0,
-          }
-        : {
-            mr: 'auto',
-          },
-    ]}
-  >
-    <ClearIcon />
-  </IconButton>
-*/
-
 function NavDrawer({
   folderData, 
   open,
@@ -208,10 +170,6 @@ function NavDrawer({
 })
 {
   const theme = useTheme();
-  const elements = [
-    'Lightroom Folder',
-    'Filesystem'
-  ];
   const lightroomFolderActive = selectedFolders.length > 0;
   const filesystemActive = selectedFilesystem.length > 0;
   const treeDataForFolders = React.useMemo(
@@ -251,15 +209,15 @@ function NavDrawer({
     },
     [folderData]
   );
-  const mkListItem = (text,index) => {
-    const active = index === 0 ? lightroomFolderActive : filesystemActive;
+
+  const mkListItem = ({active, text, onClick, Component}) => {
     return <ListItem 
       key={text} 
       disablePadding 
       sx={{ display: 'block', minHeight: 48}} >
         <Paper>
           <div style={active ? {backgroundColor: theme.palette.primary.main} : undefined}>
-            <ListItemButton onClick={handleDrawerOpen}>
+            <ListItemButton onClick={onClick}>
               <ListItemIcon
                 sx={[
                   {
@@ -275,7 +233,7 @@ function NavDrawer({
                       },
                 ]}
               >
-                {index % 2 === 0 ? <FolderIcon /> : <InsertDriveFileIcon />}
+                <Component />
               </ListItemIcon>
               <ListItemText
                 primary={text}
@@ -295,8 +253,7 @@ function NavDrawer({
     </ListItem>
   };
 
-  const mkAccordionItem = (text, index) => {
-    const active = index === 0 ? lightroomFolderActive : filesystemActive;
+  const mkAccordionItem = ({active, text, onClick, Component}, index) => {
     return <ListItem key={text} disablePadding sx={{ display: 'block' }} style={{maxWidth: "100%"}}>
       <Accordion style={{maxWidth: "100%", backgroundColor: active ? theme.palette.primary.main: undefined}} >
           <AccordionSummary
@@ -321,7 +278,7 @@ function NavDrawer({
                       },
                 ]}
               >
-                {index % 2 === 0 ? <FolderIcon /> : <InsertDriveFileIcon />}
+                <Component />
               </ListItemIcon>
               <Typography component="span">{text}</Typography>
             </AccordionSummary>
@@ -346,21 +303,60 @@ function NavDrawer({
   // fixme: the second drawer
   // "snaps in" and animates out from the side, rather than
   // animating out, as if it were an extension of the first
+  // onClick={open ? handleDrawerClose : handleDrawerOpen}>
+  const buttonElements = [
+    {
+      text: 'Lightroom Folder',
+      active: lightroomFolderActive,
+      Component: () => <FolderIcon />,
+      onClick: handleDrawerOpen
+    },
+    {
+      text: 'Filesystem',
+      active: filesystemActive,
+      Component: () => <InsertDriveFileIcon />,
+      onClick: handleDrawerOpen
+    }
+  ];
+  const menuElements = [
+    {
+      text: 'Open',
+      active: false,
+      Component: () => { return ((theme.direction === 'rtl') ^ open) ?  <ChevronLeftIcon /> : <ChevronRightIcon />;},
+      onClick: open ? handleDrawerClose : handleDrawerOpen
+    },
+    {
+      text: 'Menu',
+      active: false,
+      Component: () => <MenuIcon />,
+      onClick: ()=>{} // nothing bound just yet
+    }
+  ];
+
   return <StyledDrawer variant="permanent" open={open}>
-        <DrawerHeader>
-          <IconButton onClick={open ? handleDrawerClose : handleDrawerOpen}>
-            {((theme.direction === 'rtl') ^ open) ?  <ChevronLeftIcon /> : <ChevronRightIcon />}
-          </IconButton>
-        </DrawerHeader>
-        <Divider />
-        {!open && 
+    {open && 
+      <DrawerHeader>
+        {open && 
+          <React.Fragment>
+            <IconButton>
+              <MenuIcon />
+            </IconButton>
+            <div style={{flexGrow: 1}} />
+          </React.Fragment>
+        }
+        <IconButton onClick={open ? handleDrawerClose : handleDrawerOpen}>
+          {((theme.direction === 'rtl') ^ open) ?  <ChevronLeftIcon /> : <ChevronRightIcon />}
+        </IconButton>
+      </DrawerHeader>
+    }
+      {!open && 
          <List style={{maxWidth: "100%"}} disablePadding>
-          {elements.map(mkListItem)}
+          {(menuElements.concat(buttonElements)).map(mkListItem)}
         </List>
       }
       {open && 
          <List style={{maxWidth: "100%"}} disablePadding>
-        {elements.map(mkAccordionItem)}
+        {buttonElements.map(mkAccordionItem)}
         </List>
       }
   </StyledDrawer>
