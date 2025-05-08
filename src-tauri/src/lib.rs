@@ -21,8 +21,8 @@ use tauri_plugin_opener::OpenerExt;
 mod lrprev;
 
 struct AppState {
-    conf_dirs: ConfDirs,
-    image_id_to_image: HashMap<u64, PreviewData>,
+    conf_dirs: Option<ConfDirs>,
+    image_id_to_image: Option<HashMap<u64, PreviewData>>,
 }
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
@@ -128,7 +128,7 @@ fn find_configuration() -> Option<ConfDirs> {
     let app_data_result = env::var("APPDATA");
     if !app_data_result.is_ok() {
         println!("{}", "unimp 1");
-        unimplemented!();
+        return None;
     }
 
     let app_data_dir = app_data_result.unwrap();
@@ -229,15 +229,20 @@ fn get_preview_path_for_image_id(state: tauri::State<AppState>, image_id: &str) 
     // fixme: this code needs to handle errors!
     let image_id_int = image_id.parse::<u64>();
     if !image_id_int.is_ok() {
+        // todo: log
         return None;
     }
-    let maybe_image = state.image_id_to_image.get(&image_id_int.unwrap());
+    if !state.image_id_to_image.is_some() && state.conf_dirs.is_some() {
+        // todo: log
+        return None;
+    }
+    let maybe_image = state.image_id_to_image.as_ref().unwrap().get(&image_id_int.unwrap());
     if !maybe_image.is_some() {
         return None;
     }
 
     return Some(format_preview_filepath(
-        &state.conf_dirs.preview_root,
+        &state.conf_dirs.as_ref().unwrap().preview_root,
         maybe_image.unwrap(),
     ));
 }
@@ -336,7 +341,12 @@ fn get_image_for_id(
 
 #[tauri::command]
 fn get_app_state(state: tauri::State<AppState>) -> CommandResult<ConfDirs> {
-    return Ok(state.conf_dirs.clone());
+    if state.conf_dirs.is_none() {
+        return Err(ReflexCommandError::from(
+            anyhow::anyhow!("Request to get_app_state but conf_dirs is not set")),
+        );
+    }
+    return Ok(state.conf_dirs.as_ref().unwrap().clone());
 }
 
 fn allow_detected_drives(app: &mut tauri::App) {
@@ -358,14 +368,24 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_system_info::init())
         .setup(|app| {
-            let conf_dirs = find_configuration().unwrap();
-            // TODO: BLOCKING IS BAD
-            // block_on(do_sql(&preview_db_path.unwrap()));
-            let image_id_to_image = block_on(do_sql(&conf_dirs.preview_db_path));
-            app.manage(AppState {
-                conf_dirs: conf_dirs,
-                image_id_to_image: image_id_to_image,
-            });
+            let conf_dirs_maybe = find_configuration();
+            if conf_dirs_maybe.is_some() 
+            {
+                let conf_dirs = conf_dirs_maybe.unwrap();
+                // TODO: BLOCKING IS BAD
+                // block_on(do_sql(&preview_db_path.unwrap()));
+                let image_id_to_image = block_on(do_sql(&conf_dirs.preview_db_path));
+                app.manage(AppState {
+                    conf_dirs: Some(conf_dirs),
+                    image_id_to_image: Some(image_id_to_image),
+                });
+            }
+            else {
+                app.manage(AppState {
+                    conf_dirs: None,
+                    image_id_to_image: None,
+                });
+            }
             // allowed the given directory
             // allow_all_ascii_drives(app);
             allow_detected_drives(app);
