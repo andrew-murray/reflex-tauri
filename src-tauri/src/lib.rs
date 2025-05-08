@@ -19,9 +19,10 @@ use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tauri_plugin_fs::FsExt;
 use tauri_plugin_opener::OpenerExt;
 mod lrprev;
+mod index_folder;
 
 struct AppState {
-    conf_dirs: Option<ConfDirs>,
+    conf_dirs: Option<LightroomConfDirs>,
     image_id_to_image: Option<HashMap<u64, PreviewData>>,
 }
 
@@ -104,7 +105,7 @@ async fn do_sql(preview_db_path: &str) -> HashMap<u64, PreviewData> {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct ConfDirs {
+struct LightroomConfDirs {
     root: String,
     cat_path: String,
     metadata_db_path: String,
@@ -112,9 +113,9 @@ struct ConfDirs {
     preview_root: String,
 }
 
-impl Clone for ConfDirs {
+impl Clone for LightroomConfDirs {
     fn clone(&self) -> Self {
-        ConfDirs {
+        LightroomConfDirs {
             root: self.root.clone(),
             cat_path: self.cat_path.clone(),
             metadata_db_path: self.metadata_db_path.clone(),
@@ -124,7 +125,7 @@ impl Clone for ConfDirs {
     }
 }
 
-fn find_configuration() -> Option<ConfDirs> {
+fn find_configuration() -> Option<LightroomConfDirs> {
     let app_data_result = env::var("APPDATA");
     if !app_data_result.is_ok() {
         println!("{}", "unimp 1");
@@ -204,7 +205,7 @@ fn find_configuration() -> Option<ConfDirs> {
         .unwrap()
         .to_owned();
 
-    return Some(ConfDirs {
+    return Some(LightroomConfDirs {
         root: cat_directory.to_str().unwrap().to_owned(),
         cat_path: cat_path_value,
         metadata_db_path: metadata_db_path.unwrap(),
@@ -340,7 +341,7 @@ fn get_image_for_id(
 }
 
 #[tauri::command]
-fn get_app_state(state: tauri::State<AppState>) -> CommandResult<ConfDirs> {
+fn get_app_state(state: tauri::State<AppState>) -> CommandResult<LightroomConfDirs> {
     if state.conf_dirs.is_none() {
         return Err(ReflexCommandError::from(
             anyhow::anyhow!("Request to get_app_state but conf_dirs is not set")),
@@ -360,6 +361,11 @@ fn allow_detected_drives(app: &mut tauri::App) {
     }
 }
 
+// TODO: Manage app startup flow as it needs to discover metahelper.db and image_preview.db
+// TODO: Fix the UI for the app startup flow, when we fail to find the lightroom database
+// TODO: Implement flow to manage folder browsing
+
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -369,7 +375,7 @@ pub fn run() {
         .plugin(tauri_plugin_system_info::init())
         .setup(|app| {
             let conf_dirs_maybe = find_configuration();
-            if conf_dirs_maybe.is_some() 
+            if false && conf_dirs_maybe.is_some() 
             {
                 let conf_dirs = conf_dirs_maybe.unwrap();
                 // TODO: BLOCKING IS BAD
@@ -386,6 +392,10 @@ pub fn run() {
                     image_id_to_image: None,
                 });
             }
+
+            // let target = r"C:\projects\ambio\content\images\2025\bcn\20250115 Barcelona Gothic Barceloneta".to_string();
+            // let _ = index_folder::index_folder(&target, None);
+
             // allowed the given directory
             // allow_all_ascii_drives(app);
             allow_detected_drives(app);
