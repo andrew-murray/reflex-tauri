@@ -11,18 +11,40 @@ use std::fs;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
+use std::sync::Mutex;
 use sysinfo::Disks;
 use tauri::ipc::Response;
 use tauri::menu::{MenuBuilder, SubmenuBuilder};
 use tauri::Manager;
+use tauri::{AppHandle, Emitter};
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tauri_plugin_fs::FsExt;
 use tauri_plugin_opener::OpenerExt;
 mod lrprev;
-mod index_folder;
+mod image_folder;
+
+#[derive(Serialize, Deserialize, Debug)]
+struct SharedAppState {
+    // lightroom mode
+    conf_dirs: Option<LightroomConfDirs>,
+    // folder_search_mode
+    root_dir: Option<String>
+}
+
+impl Clone for SharedAppState {
+    fn clone(&self) -> Self {
+        SharedAppState {
+            conf_dirs: self.conf_dirs.clone(),
+            root_dir: self.root_dir.clone()
+        }
+    }
+}
 
 struct AppState {
-    conf_dirs: Option<LightroomConfDirs>,
+    shared: SharedAppState,
+    // folder mode
+    image_db_from_files: HashMap<String, image_folder::Metadata>,
+    // common?
     image_id_to_image: Option<HashMap<u64, PreviewData>>,
 }
 
@@ -233,7 +255,7 @@ fn get_preview_path_for_image_id(state: tauri::State<AppState>, image_id: &str) 
         // todo: log
         return None;
     }
-    if !state.image_id_to_image.is_some() && state.conf_dirs.is_some() {
+    if !state.image_id_to_image.is_some() && state.shared.conf_dirs.is_some() {
         // todo: log
         return None;
     }
@@ -243,7 +265,7 @@ fn get_preview_path_for_image_id(state: tauri::State<AppState>, image_id: &str) 
     }
 
     return Some(format_preview_filepath(
-        &state.conf_dirs.as_ref().unwrap().preview_root,
+        &state.shared.conf_dirs.as_ref().unwrap().preview_root,
         maybe_image.unwrap(),
     ));
 }
@@ -341,13 +363,9 @@ fn get_image_for_id(
 }
 
 #[tauri::command]
-fn get_app_state(state: tauri::State<AppState>) -> CommandResult<LightroomConfDirs> {
-    if state.conf_dirs.is_none() {
-        return Err(ReflexCommandError::from(
-            anyhow::anyhow!("Request to get_app_state but conf_dirs is not set")),
-        );
-    }
-    return Ok(state.conf_dirs.as_ref().unwrap().clone());
+fn get_shared_app_state(state: tauri::State<Mutex<AppState>>) -> CommandResult<SharedAppState> {
+    let locked_state = state.lock().unwrap();
+    return Ok(locked_state.shared.clone());
 }
 
 fn allow_detected_drives(app: &mut tauri::App) {
@@ -365,6 +383,79 @@ fn allow_detected_drives(app: &mut tauri::App) {
 // TODO: Fix the UI for the app startup flow, when we fail to find the lightroom database
 // TODO: Implement flow to manage folder browsing
 
+fn update_app_state_for_folder(app: &tauri::AppHandle, folder: &String)
+{
+    let image_index = image_folder::index_folder(folder, None);
+    if image_index.is_err()
+    {
+        let app_state = app.state::<Mutex<AppState>>();
+        let mut mutable_app_state = app_state.lock().unwrap();
+        // MutexGuard<T> implements deref-able
+        *mutable_app_state = AppState {
+            shared: SharedAppState {
+                conf_dirs: None,
+                root_dir: None,
+            },
+            image_id_to_image: None,
+            image_db_from_files: HashMap::new()
+        };
+    }
+    else
+    {
+        let image_db = image_index.unwrap();
+        for entry in image_db.keys()
+        {
+            println!("{}", entry);
+        }
+        let app_state = app.state::<Mutex<AppState>>();
+        let mut mutable_app_state = app_state.lock().unwrap();
+        // MutexGuard<T> implements deref-able
+        *mutable_app_state = AppState {
+            shared: SharedAppState {
+                conf_dirs: None,
+                root_dir: Some(folder.clone()),
+            },
+            image_id_to_image: None,
+            image_db_from_files: image_db
+        };
+    }
+}
+
+fn initialise_app_state(app: &mut tauri::App)
+{
+    let conf_dirs_maybe = find_configuration();
+    if conf_dirs_maybe.is_some()
+    {
+        let conf_dirs = conf_dirs_maybe.unwrap();
+        // TODO: BLOCKING IS BAD
+        // block_on(do_sql(&preview_db_path.unwrap()));
+        let image_id_to_image = block_on(do_sql(&conf_dirs.preview_db_path));
+        let app_state = AppState {
+            shared: SharedAppState {
+                conf_dirs: Some(conf_dirs),
+                root_dir: None,
+            },
+            image_id_to_image: Some(image_id_to_image),
+            image_db_from_files: HashMap::new()
+        };
+        app.manage(Mutex::new(app_state));
+    }
+    else {
+        /* maybe re-enable this, if my dev-cycle is slow
+        let target = r"C:\projects\ambio\content\images\2025\bcn\20250115 Barcelona Gothic Barceloneta".to_string();
+        update_app_state_for_folder(app, target);
+        */
+        let app_state = AppState {
+            shared: SharedAppState {
+                conf_dirs: None,
+                root_dir: None,
+            },
+            image_id_to_image: None,
+            image_db_from_files: HashMap::new()
+        };
+        app.manage(Mutex::new(app_state));
+    }
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -374,27 +465,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_system_info::init())
         .setup(|app| {
-            let conf_dirs_maybe = find_configuration();
-            if false && conf_dirs_maybe.is_some() 
-            {
-                let conf_dirs = conf_dirs_maybe.unwrap();
-                // TODO: BLOCKING IS BAD
-                // block_on(do_sql(&preview_db_path.unwrap()));
-                let image_id_to_image = block_on(do_sql(&conf_dirs.preview_db_path));
-                app.manage(AppState {
-                    conf_dirs: Some(conf_dirs),
-                    image_id_to_image: Some(image_id_to_image),
-                });
-            }
-            else {
-                app.manage(AppState {
-                    conf_dirs: None,
-                    image_id_to_image: None,
-                });
-            }
-
-            // let target = r"C:\projects\ambio\content\images\2025\bcn\20250115 Barcelona Gothic Barceloneta".to_string();
-            // let _ = index_folder::index_folder(&target, None);
+            initialise_app_state(app);
 
             // allowed the given directory
             // allow_all_ascii_drives(app);
@@ -422,12 +493,14 @@ pub fn run() {
 
                 match event.id().0.as_str() {
                     "open folder" => {
-                        let folder_paths = app.dialog().file().blocking_pick_folders();
-                        if folder_paths.is_none() {
-                            println!("{}", "folder_paths was not selected");
+                        let folder_path = app.dialog().file().blocking_pick_folder();
+                        if folder_path.is_none() {
+                            println!("{}", "folder_path was not selected");
                         } else {
-                            let fpath_strings : Vec<String> = folder_paths.unwrap().into_iter().map( |x| x.to_string() ).collect();
-                            println!("folder_paths: {}",fpath_strings.join(", "));
+                            let fpath = folder_path.unwrap().to_string();
+                            update_app_state_for_folder(app, &fpath);
+                            println!("emitting event {}", "shared-app-state-set");
+                            let _ = app.emit("shared-app-state-set", {});
                         }
                     }
                     "open cat" => {
@@ -465,7 +538,7 @@ pub fn run() {
             // dbg!(scope.allowed());
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![get_app_state, get_image_for_id])
+        .invoke_handler(tauri::generate_handler![get_shared_app_state, get_image_for_id])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

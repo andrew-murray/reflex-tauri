@@ -19,6 +19,7 @@ import useScript from "./useScript"
 import { readFile } from '@tauri-apps/plugin-fs';
 import { invoke } from '@tauri-apps/api/core';
 import Grid from '@mui/material/Grid';
+import { listen } from '@tauri-apps/api/event';
 
 // todo: it's a bit awkward to duplicate this width and easier here
 // unclear how to share this code
@@ -198,6 +199,7 @@ export default function Home() {
 
   const [metadataDBPath, setMetadataDBPath] = React.useState(null);
   const [previewDBPath, setPreviewDBPath] = React.useState(null);
+  const [rootFolderToSearch, setRootFolderToSearch] = React.useState(null);
   const [previewDB, setPreviewDB] = React.useState(null);
   const [imageToOrientation, setImageToOrientation] = React.useState(null);
 
@@ -247,6 +249,7 @@ export default function Home() {
         {
           // todo: set something?
           setPreviewDB(null);
+          setImageToOrientation({});
           return;
         }
         if(SQL)
@@ -265,6 +268,8 @@ export default function Home() {
         {
           // if we ever hit this, we need to do some refactoring to have better error behaviour!
           console.error("SQL not available");
+          setPreviewDB(null);
+          setImageToOrientation({});
         }
       };
       awaitable(); 
@@ -274,17 +279,48 @@ export default function Home() {
     },
     [previewDBPath]
   );
+
+  const handleRootFolderSet = React.useEffect(
+    () => {
+      let mounted = true;
+      const awaitable = async () => {
+        // this callback isn't super-faithful with its use of the mounted variable
+        if (mounted === false)
+        {
+          return;
+        }
+        if (rootFolderToSearch === null)
+        {
+          setDB(null);
+          setImages([]);
+          return;
+        }
+        setInProgress(true);
+        // todo: progressively fetch some images
+        setDB(null);
+        setImages([]);
+        setInProgress(false);
+      };
+      awaitable(); 
+      return ()=>{
+        mounted = false;
+      };
+    },
+    [rootFolderToSearch]
+  );
+
   const handleMetadataFileImport = React.useEffect(
     () => {
       let mounted = true;
       const awaitable = async () => {
-        // this callback isn't super-faithful with it's use of the mounted variable
+        // this callback isn't super-faithful with its use of the mounted variable
         if (mounted === false)
         {
           return;
         }
         if (metadataDBPath === null)
         {
+          setDB(null);
           setImages([]);
           return;
         }
@@ -326,6 +362,7 @@ export default function Home() {
         {
           // if we ever hit this, we need to do some refactoring to have better error behaviour!
           console.error("SQL not available");
+          setDB(null);
           setImages([]);
         }
       };
@@ -341,12 +378,23 @@ export default function Home() {
         let mounted = true;
         if(SQL)
         {
-          invoke("get_app_state").then(
+          invoke("get_shared_app_state").then(
             (response) => {
               if(mounted)
               {
-                setMetadataDBPath(response.metadata_db_path);
-                setPreviewDBPath(response.preview_db_path);
+                console.log("received response");
+                console.log({response});
+                if( response.conf_dirs !== null)
+                {
+                  setMetadataDBPath(response.conf_dirs.metadata_db_path);
+                  setPreviewDBPath(response.conf_dirs.preview_db_path);
+                }
+                else
+                {
+                  setMetadataDBPath(null);
+                  setPreviewDBPath(null);
+                }
+                setRootFolderToSearch(response.root_dir);
               }
             }
           )
@@ -358,6 +406,49 @@ export default function Home() {
       },
       [SQL]
   );
+  const listenToStateChanges = React.useEffect(
+    () => {
+      let mounted = true;
+      let unlisten = null;
+      const awaitable = async () => {
+        unlisten = await listen('shared-app-state-set', (event) => {
+          console.log("shared-app-state-set event received");
+          console.log({event});
+          invoke("get_shared_app_state").then(
+            (response) => {
+              if(mounted)
+              {
+                console.log("listened to changes response");
+                console.log({response});
+                if( response.conf_dirs !== null)
+                {
+                  setMetadataDBPath(response.conf_dirs.metadata_db_path);
+                  setPreviewDBPath(response.conf_dirs.preview_db_path);
+                }
+                else
+                {
+                  setMetadataDBPath(null);
+                  setPreviewDBPath(null);
+                }
+                setRootFolderToSearch(response.root_dir);
+              }
+            }
+          );
+        });
+      };
+      awaitable();
+      return () => {
+        mounted = false;
+        if (unlisten !== null)
+        {
+          unlisten();
+          unlisten = null;
+        }
+      }
+    },
+    []
+  );
+
   const handleDrawerClose = React.useCallback( 
     ()=> {
       setNavOpen(false);
