@@ -43,7 +43,8 @@ impl Clone for SharedAppState {
 struct AppState {
     shared: SharedAppState,
     // folder mode
-    image_db_from_files: HashMap<String, image_folder::Metadata>,
+    image_db_from_files: Vec<(String, image_folder::Metadata)>,
+    image_db_to_index: HashMap<String, usize>,
     // common?
     image_id_to_image: Option<HashMap<u64, PreviewData>>,
 }
@@ -397,16 +398,26 @@ fn update_app_state_for_folder(app: &tauri::AppHandle, folder: &String)
                 root_dir: None,
             },
             image_id_to_image: None,
-            image_db_from_files: HashMap::new()
+            image_db_from_files: Vec::new(),
+            image_db_to_index: HashMap::new()
         };
     }
     else
     {
         let image_db = image_index.unwrap();
+        // there's probably a far-more-efficient way of doing this
+        let image_db_key_to_index = image_db
+            .keys()
+            .enumerate()
+            .map(|(i, k)| (k.clone(), i))
+            .collect::<HashMap<String, usize>>();
         for entry in image_db.keys()
         {
             println!("{}", entry);
         }
+        let image_db_values = image_db
+            .into_iter()
+            .collect();
         let app_state = app.state::<Mutex<AppState>>();
         let mut mutable_app_state = app_state.lock().unwrap();
         // MutexGuard<T> implements deref-able
@@ -416,7 +427,8 @@ fn update_app_state_for_folder(app: &tauri::AppHandle, folder: &String)
                 root_dir: Some(folder.clone()),
             },
             image_id_to_image: None,
-            image_db_from_files: image_db
+            image_db_from_files: image_db_values,
+            image_db_to_index: image_db_key_to_index
         };
     }
 }
@@ -436,7 +448,8 @@ fn initialise_app_state(app: &mut tauri::App)
                 root_dir: None,
             },
             image_id_to_image: Some(image_id_to_image),
-            image_db_from_files: HashMap::new()
+            image_db_from_files: Vec::new(),
+            image_db_to_index: HashMap::new()
         };
         app.manage(Mutex::new(app_state));
     }
@@ -451,7 +464,8 @@ fn initialise_app_state(app: &mut tauri::App)
                 root_dir: None,
             },
             image_id_to_image: None,
-            image_db_from_files: HashMap::new()
+            image_db_from_files: Vec::new(),
+            image_db_to_index: HashMap::new()
         };
         app.manage(Mutex::new(app_state));
     }
