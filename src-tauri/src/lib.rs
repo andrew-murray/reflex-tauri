@@ -16,7 +16,7 @@ use sysinfo::Disks;
 use tauri::ipc::Response;
 use tauri::menu::{MenuBuilder, SubmenuBuilder};
 use tauri::Manager;
-use tauri::{AppHandle, Emitter};
+use tauri::Emitter;
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tauri_plugin_fs::FsExt;
 use tauri_plugin_opener::OpenerExt;
@@ -43,7 +43,7 @@ impl Clone for SharedAppState {
 struct AppState {
     shared: SharedAppState,
     // folder mode
-    image_db_from_files: Vec<(String, image_folder::Metadata)>,
+    image_db_from_files: Vec<(image_folder::ImagePaths, Option<image_folder::ImageData>)>,
     image_db_to_index: HashMap<String, usize>,
     // common?
     image_id_to_image: Option<HashMap<u64, PreviewData>>,
@@ -386,7 +386,7 @@ fn allow_detected_drives(app: &mut tauri::App) {
 
 fn update_app_state_for_folder(app: &tauri::AppHandle, folder: &String)
 {
-    let image_index = image_folder::index_folder(folder, None);
+    let image_index = image_folder::index_folder(folder);
     if image_index.is_err()
     {
         let app_state = app.state::<Mutex<AppState>>();
@@ -416,7 +416,8 @@ fn update_app_state_for_folder(app: &tauri::AppHandle, folder: &String)
             println!("{}", entry);
         }
         let image_db_values = image_db
-            .into_iter()
+            .values()
+            .cloned()
             .collect();
         let app_state = app.state::<Mutex<AppState>>();
         let mut mutable_app_state = app_state.lock().unwrap();
