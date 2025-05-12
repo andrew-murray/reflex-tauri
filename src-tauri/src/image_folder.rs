@@ -3,6 +3,7 @@ use std::fs;
 use anyhow;
 use rexif::*;
 use std::collections::HashMap;
+use crate::image_data;
 
 #[derive(Clone)]
 enum DataVariant {
@@ -12,17 +13,23 @@ enum DataVariant {
     Ascii(String)
 }
 
-const tags : [ExifTag; 10] = [
-    ExifTag::DateTimeOriginal,
-    ExifTag::Model,
-    ExifTag::LensModel,
-    ExifTag::ShutterSpeedValue,
-    ExifTag::ApertureValue,
-    ExifTag::FocalLength,
-    ExifTag::ISOSpeedRatings,
-    ExifTag::ExposureMode,
+const TAGS : [ExifTag; 10] = [
+    ExifTag::DateTimeOriginal, // ascii "YYYY:MM:DD HH:MM:SS"+0x00
+    ExifTag::Model, // ascii
+    ExifTag::LensModel, // ascii
+    ExifTag::ShutterSpeedValue, // signed rational
+    ExifTag::ApertureValue, // unsigned rational
+    ExifTag::FocalLength, // unsigned rational
+    ExifTag::ISOSpeedRatings, // unsigned short
+    // unsigned short
+    // ('1' means manual control, '2' program normal, '3' aperture priority,
+    // '4' shutter priority, '5' program creative (slow program), '6' program action(high-speed program),
+    // '7' portrait mode, '8' landscape mode.)
+    ExifTag::ExposureProgram,
+    // unsigned short
+    // ( '1' means average, '2' center weighted average, '3' spot, '4' multi-spot, '5' multi-segment.)
     ExifTag::MeteringMode,
-    ExifTag::Flash,
+    ExifTag::Flash, // unsigned short ('1' means flash was used, '0' means not used.)
 ];
 
 pub type Metadata = Vec<(ExifTag, TagValue)>;
@@ -30,15 +37,88 @@ pub type Metadata = Vec<(ExifTag, TagValue)>;
 #[derive(Clone)]
 pub struct ImageData
 {
-    data: HashMap<String, Option<DataVariant>>,
-    tags: Vec<ExifEntry>
+    pub data: HashMap<String, Option<DataVariant>>,
+    pub tags: Vec<ExifEntry>
 }
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
 pub struct ImagePaths
 {
-    folder: String,
-    filepath: String
+    pub folder: String,
+    pub filepath: String
+}
+
+// this function only handles exactly the right type
+// TODO: I'd like the get_X_from_tags to be generic, but I don't quite have the rust
+// chops to map between Tag::Value::U8 and a real type
+// and "name" those in the function
+pub fn get_string_from_tags(exif_data: &Vec<ExifEntry>, tag: ExifTag) -> Option<String>
+{
+    let entry_maybe = exif_data.iter().find(|x| x.tag == tag);
+    if entry_maybe.is_none()
+    {
+        return None;
+    }
+
+    let entry_val = entry_maybe.unwrap();
+    let res = match &(entry_val.value) {
+        TagValue::Ascii(vec) => Some(vec.clone()),
+        _ => None
+    };
+    return res;
+}
+pub fn get_u8_from_tags(exif_data: &Vec<ExifEntry>, tag: ExifTag) -> Option<u8>
+{
+    let entry_maybe = exif_data.iter().find(|x| x.tag == tag);
+    if entry_maybe.is_none()
+    {
+        return None;
+    }
+
+    let entry_val = entry_maybe.unwrap();
+    let res = match &(entry_val.value) {
+        TagValue::U8(vec) => vec.get(0).cloned(),
+        _ => None
+    };
+    return res;
+}
+
+// this function only handles exactly the right type
+pub fn get_u16_from_tags(exif_data: &Vec<ExifEntry>, tag: ExifTag) -> Option<u16>
+{
+    let entry_maybe = exif_data.iter().find(|x| x.tag == tag);
+    if entry_maybe.is_none()
+    {
+        return None;
+    }
+
+    let entry_val = entry_maybe.unwrap();
+    let res = match &(entry_val.value) {
+        TagValue::U16(vec) => vec.get(0).cloned(),
+        _ => None
+    };
+    return res;
+}
+
+// this function eagerly converts rational types to f64
+pub fn get_f64_from_tags(exif_data: &Vec<ExifEntry>, tag: ExifTag) -> Option<f64>
+{
+    let entry_maybe = exif_data.iter().find(|x| x.tag == tag);
+    if entry_maybe.is_none()
+    {
+        return None;
+    }
+
+    let entry_val = entry_maybe.unwrap();
+    let res = match &(entry_val.value) {
+        // this code will have to be smart to zero-vectors or > 1 size vectors eventually
+        TagValue::F32(ref v) => Some(v.get(0).unwrap().clone() as f64),
+        TagValue::F64(ref v) => Some(v.get(0).unwrap().clone()),
+        TagValue::IRational(_) => Some(entry_val.value.to_f64(0).unwrap()),
+        TagValue::URational(_) => Some(entry_val.value.to_f64(0).unwrap()),
+        _ => None
+    };
+    return res;
 }
 
 fn read_file_with_rexif(folder: &String, filename: &String) -> (ImagePaths, Option<ImageData>)
@@ -55,7 +135,7 @@ fn read_file_with_rexif(folder: &String, filename: &String) -> (ImagePaths, Opti
             println!("{:?}", entry);
         }
         let mut data_map = HashMap::new();
-        for t in tags {
+        for t in TAGS {
             let entry_maybe = exif_data.iter().find(|x| x.tag == t);
             if entry_maybe.is_some()
             {
@@ -99,10 +179,10 @@ fn read_file_with_rexif(folder: &String, filename: &String) -> (ImagePaths, Opti
     }
 }
 
-pub fn index_folder(path: &String) -> anyhow::Result<HashMap<String, (ImagePaths, Option<ImageData>)>>
+pub fn index_folder(root_path: &String) -> anyhow::Result<HashMap<String, (ImagePaths, Option<ImageData>)>>
 {
     let mut file_metadata : HashMap<String, (ImagePaths, Option<ImageData>)> = HashMap::new();
-    for entry in fs::read_dir(&path)? {
+    for entry in fs::read_dir(&root_path)? {
         let entry = entry?;
         let path = entry.path();
         if path.is_dir()
@@ -137,8 +217,7 @@ pub fn index_folder(path: &String) -> anyhow::Result<HashMap<String, (ImagePaths
             }
             // we force
             let conv_path_val = conv_path.unwrap();
-            let dumb_folder = "".to_string();
-            let load_result = read_file_with_rexif(&dumb_folder, &conv_path_val);
+            let load_result = read_file_with_rexif(root_path, &conv_path_val);
             if load_result.1.is_some()
             {
                 // println!("{:?}", load_result.1.as_ref().unwrap());
@@ -147,4 +226,33 @@ pub fn index_folder(path: &String) -> anyhow::Result<HashMap<String, (ImagePaths
         }
     }
     return Ok(file_metadata);
+}
+
+
+pub fn make_image_data_from_exif(folder: Option<String>, filename: String, exif_fields: &Vec<ExifEntry>) -> image_data::ImageMetadataFields
+{
+    let datetime_original = get_string_from_tags(exif_fields, ExifTag::DateTimeOriginal);
+    let model = get_string_from_tags(exif_fields, ExifTag::Model);
+    let lens_model = get_string_from_tags(exif_fields, ExifTag::LensModel);
+    let shutter_speed_value = get_f64_from_tags(exif_fields, ExifTag::ShutterSpeedValue);
+    let aperture_value = get_f64_from_tags(exif_fields, ExifTag::ApertureValue);
+    let focal_length = get_f64_from_tags(exif_fields, ExifTag::FocalLength);
+    let iso_speed_rating = get_u16_from_tags(exif_fields, ExifTag::ISOSpeedRatings);
+    let exposure_program = get_u16_from_tags(exif_fields, ExifTag::ExposureProgram);
+    let metering_mode = get_u16_from_tags(exif_fields, ExifTag::MeteringMode);
+    let flash = get_u16_from_tags(exif_fields, ExifTag::Flash);
+    return image_data::ImageMetadataFields {
+        folder,
+        filename,
+        datetime_original,
+        model,
+        lens_model,
+        shutter_speed_value,
+        aperture_value,
+        focal_length,
+        iso_speed_rating,
+        exposure_program,
+        metering_mode,
+        flash
+    };
 }

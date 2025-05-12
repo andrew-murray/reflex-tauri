@@ -20,8 +20,11 @@ use tauri::Emitter;
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tauri_plugin_fs::FsExt;
 use tauri_plugin_opener::OpenerExt;
+use crate::image_data::ImageMetadataFields;
+
 mod lrprev;
 mod image_folder;
+mod image_data;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct SharedAppState {
@@ -43,7 +46,7 @@ impl Clone for SharedAppState {
 struct AppState {
     shared: SharedAppState,
     // folder mode
-    image_db_from_files: Vec<(image_folder::ImagePaths, Option<image_folder::ImageData>)>,
+    image_db_from_files: Vec<image_data::ImageMetadataFields>,
     image_db_to_index: HashMap<String, usize>,
     // common?
     image_id_to_image: Option<HashMap<u64, PreviewData>>,
@@ -383,6 +386,26 @@ fn allow_detected_drives(app: &mut tauri::App) {
 // TODO: Manage app startup flow as it needs to discover metahelper.db and image_preview.db
 // TODO: Fix the UI for the app startup flow, when we fail to find the lightroom database
 // TODO: Implement flow to manage folder browsing
+fn maybe_image_data(tup: &(image_folder::ImagePaths, Option<image_folder::ImageData>)) -> image_data::ImageMetadataFields
+{
+    if tup.1.is_some()
+    {
+        return image_folder::make_image_data_from_exif(
+            Some(tup.0.folder.clone()),
+            tup.0.filepath.clone(),
+            &tup.1.as_ref().unwrap().tags
+        );
+    }
+    else
+    {
+        let empty_tags = Vec::new();
+        return image_folder::make_image_data_from_exif(
+            Some(tup.0.folder.clone()),
+            tup.0.filepath.clone(),
+            &empty_tags
+        );
+    }
+}
 
 fn update_app_state_for_folder(app: &tauri::AppHandle, folder: &String)
 {
@@ -415,10 +438,14 @@ fn update_app_state_for_folder(app: &tauri::AppHandle, folder: &String)
         {
             println!("{}", entry);
         }
-        let image_db_values = image_db
+        let image_db_values : Vec<ImageMetadataFields> = image_db
             .values()
-            .cloned()
+            .map(maybe_image_data)
             .collect();
+        for x in image_db_values.iter()
+        {
+            println!("{:?}", x);
+        }
         let app_state = app.state::<Mutex<AppState>>();
         let mut mutable_app_state = app_state.lock().unwrap();
         // MutexGuard<T> implements deref-able
