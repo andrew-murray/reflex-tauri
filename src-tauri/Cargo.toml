@@ -35,4 +35,5 @@ anyhow = "1.0.97"
 thiserror = "2.0.12"
 rawloader = "0.37.1"
 rexif = "0.7.5"
+tauri-plugin-sql = { version = "2", features = ["sqlite"] }
 

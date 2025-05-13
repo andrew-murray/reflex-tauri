@@ -4,7 +4,8 @@ use futures::executor::block_on;
 use glob::glob;
 use serde::{Deserialize, Serialize, Serializer};
 use sqlx::sqlite::SqliteConnectOptions;
-use sqlx::ConnectOptions;
+use sqlx::{ConnectOptions, Executor, Pool, Sqlite};
+use sqlx::sqlite::SqlitePoolOptions;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
@@ -50,6 +51,7 @@ struct AppState {
     image_db_to_index: HashMap<String, usize>,
     // common?
     image_id_to_image: Option<HashMap<u64, PreviewData>>,
+    reflex_db: Pool<Sqlite>
 }
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
@@ -407,23 +409,21 @@ fn maybe_image_data(tup: &(image_folder::ImagePaths, Option<image_folder::ImageD
     }
 }
 
-fn update_app_state_for_folder(app: &tauri::AppHandle, folder: &String)
+async fn update_app_state_for_folder(app: &tauri::AppHandle, folder: &String)
 {
     let image_index = image_folder::index_folder(folder);
     if image_index.is_err()
     {
         let app_state = app.state::<Mutex<AppState>>();
         let mut mutable_app_state = app_state.lock().unwrap();
-        // MutexGuard<T> implements deref-able
-        *mutable_app_state = AppState {
-            shared: SharedAppState {
-                conf_dirs: None,
-                root_dir: None,
-            },
-            image_id_to_image: None,
-            image_db_from_files: Vec::new(),
-            image_db_to_index: HashMap::new()
+        mutable_app_state.shared = SharedAppState {
+            conf_dirs: None,
+            root_dir: None,
         };
+        mutable_app_state.image_id_to_image = None;
+        mutable_app_state.image_db_from_files = Vec::new();
+        mutable_app_state.image_db_to_index = HashMap::new();
+        // mutable_app_state.reflex_db
     }
     else
     {
@@ -448,20 +448,22 @@ fn update_app_state_for_folder(app: &tauri::AppHandle, folder: &String)
         }
         let app_state = app.state::<Mutex<AppState>>();
         let mut mutable_app_state = app_state.lock().unwrap();
-        // MutexGuard<T> implements deref-able
-        *mutable_app_state = AppState {
-            shared: SharedAppState {
-                conf_dirs: None,
-                root_dir: Some(folder.clone()),
-            },
-            image_id_to_image: None,
-            image_db_from_files: image_db_values,
-            image_db_to_index: image_db_key_to_index
+        mutable_app_state.shared = SharedAppState {
+            conf_dirs: None,
+            root_dir: Some(folder.clone()),
         };
+        mutable_app_state.image_id_to_image = None;
+        mutable_app_state.image_db_from_files = image_db_values;
+        mutable_app_state.image_db_to_index =  image_db_key_to_index;
+        // mutable_app_state.reflex_db
+        // get all the data into the db
+        // sqlx::query("DELETE FROM image_metadata").execute(&mutable_app_state.reflex_db).await?;
+        // sqlx::query("DELETE FROM image_metadata").execute(&mutable_app_state.reflex_db).await?;
+        // mutable_app_state.reflex_db.execute()
     }
 }
 
-fn initialise_app_state(app: &mut tauri::App)
+fn initialise_app_state(app: &mut tauri::App, db: Pool<Sqlite>)
 {
     let conf_dirs_maybe = find_configuration();
     if conf_dirs_maybe.is_some()
@@ -477,7 +479,8 @@ fn initialise_app_state(app: &mut tauri::App)
             },
             image_id_to_image: Some(image_id_to_image),
             image_db_from_files: Vec::new(),
-            image_db_to_index: HashMap::new()
+            image_db_to_index: HashMap::new(),
+            reflex_db: db
         };
         app.manage(Mutex::new(app_state));
     }
@@ -493,21 +496,40 @@ fn initialise_app_state(app: &mut tauri::App)
             },
             image_id_to_image: None,
             image_db_from_files: Vec::new(),
-            image_db_to_index: HashMap::new()
+            image_db_to_index: HashMap::new(),
+            reflex_db: db
         };
         app.manage(Mutex::new(app_state));
     }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() {
+pub async fn run() {
+    let pool_maybe = SqlitePoolOptions::new()
+        .max_connections(2)
+        .connect("sqlite://reflex_local.db").await;
+
+    if pool_maybe.is_err()
+    {
+        // do something
+    }
+
+    let pool = pool_maybe.unwrap();
+
+
     tauri::Builder::default()
+        .plugin(tauri_plugin_sql::Builder::new()
+            .add_migrations("sqlite:reflex_local.db", vec![
+                image_data::M1
+            ])
+            .build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_system_info::init())
         .setup(|app| {
-            initialise_app_state(app);
+            initialise_app_state(app, pool);
+
 
             // allowed the given directory
             // allow_all_ascii_drives(app);
