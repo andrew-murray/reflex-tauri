@@ -252,6 +252,17 @@ fn format_preview_filepath(preview_root: &str, image: &PreviewData) -> String {
 }
 
 #[tauri::command]
+fn get_available_images(state: tauri::State<AppState>, limit: &usize, offset: &usize) -> Vec<image_data::ImageMetadataFields> {
+    return state.image_db_from_files[offset.clone()..offset+limit].to_vec();
+}
+
+#[tauri::command]
+fn get_total_available_images(state: tauri::State<AppState>) -> usize {
+    return state.image_db_to_index.len();
+}
+
+
+#[tauri::command]
 fn get_preview_path_for_image_id(state: tauri::State<AppState>, image_id: &str) -> Option<String> {
     // fixme: this code needs to handle errors!
     let image_id_int = image_id.parse::<u64>();
