@@ -297,9 +297,28 @@ export default function Home() {
         }
         setInProgress(true);
         // todo: progressively fetch some images
-        setDB(null);
-        setImages([]);
-        setInProgress(false);
+        invoke("get_available_images", {offset: 0, limit: 100}).then(
+          (response) => {
+            if(mounted)
+            {
+              console.log("received available_images response");
+              console.log({response});
+              /*
+              if( response.conf_dirs !== null)
+              {
+                setMetadataDBPath(response.conf_dirs.metadata_db_path);
+                setPreviewDBPath(response.conf_dirs.preview_db_path);
+              }
+              else
+              {
+                setMetadataDBPath(null);
+                setPreviewDBPath(null);
+              }
+              setRootFolderToSearch(response.root_dir);
+              */
+            }
+          }
+        );
       };
       awaitable(); 
       return ()=>{

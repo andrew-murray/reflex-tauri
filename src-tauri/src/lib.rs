@@ -1,3 +1,4 @@
+use std::cmp::min;
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use anyhow::Result;
 use futures::executor::block_on;
@@ -6,6 +7,7 @@ use serde::{Deserialize, Serialize, Serializer};
 use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::ConnectOptions;
 use std::collections::HashMap;
+use std::cmp;
 use std::env;
 use std::fs;
 use std::fs::File;
@@ -31,14 +33,16 @@ struct SharedAppState {
     // lightroom mode
     conf_dirs: Option<LightroomConfDirs>,
     // folder_search_mode
-    root_dir: Option<String>
+    root_dir: Option<String>,
+    total_images: Option<usize>
 }
 
 impl Clone for SharedAppState {
     fn clone(&self) -> Self {
         SharedAppState {
             conf_dirs: self.conf_dirs.clone(),
-            root_dir: self.root_dir.clone()
+            root_dir: self.root_dir.clone(),
+            total_images: self.total_images.clone()
         }
     }
 }
@@ -252,35 +256,46 @@ fn format_preview_filepath(preview_root: &str, image: &PreviewData) -> String {
 }
 
 #[tauri::command]
-fn get_available_images(state: tauri::State<AppState>, limit: &usize, offset: &usize) -> Vec<image_data::ImageMetadataFields> {
-    return state.image_db_from_files[offset.clone()..offset+limit].to_vec();
+fn get_available_images(state: tauri::State<Mutex<AppState>>, offset: usize, limit: usize) -> Vec<image_data::ImageMetadataFields> {
+    let locked_state = state.lock().unwrap();
+    if offset > locked_state.image_db_from_files.len()
+    {
+        return Vec::new();
+    }
+    else
+    {
+        let end_point = min( offset + limit, locked_state.image_db_from_files.len() );
+        return locked_state.image_db_from_files[offset.clone()..end_point].to_vec();
+    }
 }
 
 #[tauri::command]
-fn get_total_available_images(state: tauri::State<AppState>) -> usize {
-    return state.image_db_to_index.len();
+fn get_total_available_images(state: tauri::State<Mutex<AppState>>) -> usize {
+    let locked_state = state.lock().unwrap();
+    return locked_state.image_db_to_index.len();
 }
 
 
 #[tauri::command]
-fn get_preview_path_for_image_id(state: tauri::State<AppState>, image_id: &str) -> Option<String> {
+fn get_preview_path_for_image_id(state: tauri::State<Mutex<AppState>>, image_id: &str) -> Option<String> {
     // fixme: this code needs to handle errors!
     let image_id_int = image_id.parse::<u64>();
     if !image_id_int.is_ok() {
         // todo: log
         return None;
     }
-    if !state.image_id_to_image.is_some() && state.shared.conf_dirs.is_some() {
+    let locked_state = state.lock().unwrap();
+    if !locked_state.image_id_to_image.is_some() && locked_state.shared.conf_dirs.is_some() {
         // todo: log
         return None;
     }
-    let maybe_image = state.image_id_to_image.as_ref().unwrap().get(&image_id_int.unwrap());
+    let maybe_image = locked_state.image_id_to_image.as_ref().unwrap().get(&image_id_int.unwrap());
     if !maybe_image.is_some() {
         return None;
     }
 
     return Some(format_preview_filepath(
-        &state.shared.conf_dirs.as_ref().unwrap().preview_root,
+        &locked_state.shared.conf_dirs.as_ref().unwrap().preview_root,
         maybe_image.unwrap(),
     ));
 }
@@ -317,7 +332,7 @@ pub type CommandResult<T> = std::result::Result<T, ReflexCommandError>;
 
 #[tauri::command]
 fn get_image_for_id(
-    state: tauri::State<AppState>,
+    state: tauri::State<Mutex<AppState>>,
     image_id: String,
     image_path: String,
     mode: String,
@@ -328,7 +343,7 @@ fn get_image_for_id(
                 .context(format!("received {}", mode)),
         ));
     }
-    let preview_path = get_preview_path_for_image_id(state, &image_id);
+    let preview_path = get_preview_path_for_image_id(state.clone(), &image_id);
     if !preview_path.is_some() {
         // fallback to loading raw
         // let raw_exists = fs::exists(&image_path).unwrap_or(false);
@@ -430,6 +445,7 @@ fn update_app_state_for_folder(app: &tauri::AppHandle, folder: &String)
             shared: SharedAppState {
                 conf_dirs: None,
                 root_dir: None,
+                total_images: None
             },
             image_id_to_image: None,
             image_db_from_files: Vec::new(),
@@ -464,6 +480,7 @@ fn update_app_state_for_folder(app: &tauri::AppHandle, folder: &String)
             shared: SharedAppState {
                 conf_dirs: None,
                 root_dir: Some(folder.clone()),
+                total_images: Some(image_db_key_to_index.len())
             },
             image_id_to_image: None,
             image_db_from_files: image_db_values,
@@ -485,6 +502,7 @@ fn initialise_app_state(app: &mut tauri::App)
             shared: SharedAppState {
                 conf_dirs: Some(conf_dirs),
                 root_dir: None,
+                total_images: None
             },
             image_id_to_image: Some(image_id_to_image),
             image_db_from_files: Vec::new(),
@@ -501,6 +519,7 @@ fn initialise_app_state(app: &mut tauri::App)
             shared: SharedAppState {
                 conf_dirs: None,
                 root_dir: None,
+                total_images: None
             },
             image_id_to_image: None,
             image_db_from_files: Vec::new(),
@@ -591,7 +610,7 @@ pub fn run() {
             // dbg!(scope.allowed());
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![get_shared_app_state, get_image_for_id])
+        .invoke_handler(tauri::generate_handler![get_shared_app_state, get_image_for_id, get_total_available_images, get_available_images])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
