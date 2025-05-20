@@ -77,11 +77,11 @@ function computeFolderAndFilesystemPathsFromImages(images)
   for (const image of images)
   {
     // TODO: where to handle null
-    // folders.add(image["com_adobe_folder"]);
-    folders.add(image["folder"]);
-    // const filepath = image["com_adobe_absoluteFilepath"];
-    const filepath = image["filename"];
-    const paths = filepath.split(pathsep);
+    // TODO: Remove adobe/filepath support
+    const folderForImage = "folder" in image ? image["folder"] : image["com_adobe_folder"];
+    const filenameForImage = "filename" in image ? image["filename"] : image["com_adobe_absoluteFilepath"];
+    folders.add(folderForImage);
+    const paths = filenameForImage.split(pathsep);
      // remove filename 
     const realFolders = paths.slice(0, paths.length - 1);
     for(const index of [...Array(realFolders.length).keys()])
@@ -580,9 +580,12 @@ export default function Home() {
         const skipFilesystemFiltering = noFilesystemFilters || ( noLessFiltered && filesystemIsEqual);
         const skipMetricFiltering = noMetricFilters || (noLessFiltered && allMetricsEqual);
         const filterFunc = (image, index) => {
-          const folderPass = skipFolderFiltering || folderFilters.includes(image["com_adobe_folder"]);
+          // TODO: Remove adobe/filepath support
+          const folderForImage = "folder" in image ? image["folder"] : image["com_adobe_folder"];
+          const filenameForImage = "filename" in image ? image["filename"] : image["com_adobe_absoluteFilepath"];
+          const folderPass = skipFolderFiltering || folderFilters.includes(folderForImage);
           const filesystemPass = skipFilesystemFiltering || filesystemFilters.some(
-            fFilter => image["com_adobe_absoluteFilepath"].startsWith(fFilter)
+            fFilter => filenameForImage.startsWith(fFilter)
           );
           let passMetricFilters = true;
           if(!skipMetricFiltering)
@@ -611,9 +614,12 @@ export default function Home() {
         // if filesystemFilters includes it
         const filteredImages = images.filter(
           (image, index) => {
-            const folderPass =  noFolderFilters || folderFilters.includes(image["com_adobe_folder"]);
+            // TODO: Remove adobe/filepath support
+            const folderForImage = "folder" in image ? image["folder"] : image["com_adobe_folder"];
+            const filenameForImage = "filename" in image ? image["filename"] : image["com_adobe_absoluteFilepath"];
+            const folderPass =  noFolderFilters || folderFilters.includes(folderForImage);
             const filesystemPass = noFilesystemFilters || filesystemFilters.some(
-              fFilter => image["com_adobe_absoluteFilepath"].startsWith(fFilter)
+              fFilter => filenameForImage.startsWith(fFilter)
             );
             let passMetricFilters = true;
             if (!noMetricFilters)
