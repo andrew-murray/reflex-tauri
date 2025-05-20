@@ -62,10 +62,11 @@ function GraphSettingsPanel({logSelected, onSetLogMode, freqSelected, onSetFreqM
 }
 
 export default function GraphPanel({images, logSelected, onSetLogMode, freqSelected, onSetFreqMode, ratingMode, onSetRatingMode}) {
+    console.log({images});
     // graphs are going to be [shutter, aperture, ISO] naturally
-    const shutter = fields.shutter;
-    const aperture = fields.aperture;
-    const iso = fields.iso;
+    const shutter = "shutter_speed_value"; // fields.shutter;
+    const aperture = "aperture_value"; // fields.aperture;
+    const iso = "iso_speed_rating"; // fields.iso;
 
     // Note: metadata may not be present!
     // TODO: Exclude bad data?
@@ -108,10 +109,15 @@ export default function GraphPanel({images, logSelected, onSetLogMode, freqSelec
             // let's ensure the values are parsed properly
             // const parsedGroupedData = 
             let parsedGroupedData = {};
+            const defaultParser = (s) => {
+                return s;
+            };
+
+
             for (const field of [shutter, aperture, iso])
             {
                 const inputFieldDict = groupedData[field];
-                const parserForField = parsers[field];
+                const parserForField = parsers[field] || defaultParser;
                 let outputFieldValues = []
                 for (const [k , v] of Object.entries(inputFieldDict))
                 {
@@ -136,6 +142,12 @@ export default function GraphPanel({images, logSelected, onSetLogMode, freqSelec
                         ratingFreqs
                     });
                 }
+                console.log(
+                {
+                    field,
+                    outputFieldValues
+                }
+                )
                 if (field === shutter)
                 {
                     outputFieldValues.sort(
@@ -167,7 +179,7 @@ export default function GraphPanel({images, logSelected, onSetLogMode, freqSelec
             <Paper style={{margin: "auto", width: "100%", height: "100%", paddingTop: "1em", paddingRight: "0.5em"}}>
                 <Graphs.BarGraph
                     data={reducedData[shutter]}
-                    dataKey={name[shutter]}
+                    dataKey={shutter}
                     color="#c0ea02"
                     logMode={logSelected ? true : undefined}
                     freqMode={freqSelected ? true : undefined}
@@ -179,7 +191,7 @@ export default function GraphPanel({images, logSelected, onSetLogMode, freqSelec
             <Paper style={{margin: "auto", width: "100%", height: "100%", paddingTop: "1em", paddingRight: "0.5em"}}>
                 <Graphs.BarGraph
                     data={reducedData[aperture]}
-                    dataKey={name[aperture]}
+                    dataKey={aperture}
                     color="#eac002"
                     logMode={logSelected ? true : undefined}
                     freqMode={freqSelected ? true : undefined}
@@ -191,7 +203,7 @@ export default function GraphPanel({images, logSelected, onSetLogMode, freqSelec
             <Paper style={{margin: "auto", width: "100%", height: "100%", paddingTop: "1em", paddingRight: "0.5em"}}>
                 <Graphs.BarGraph
                     data={reducedData[iso]}
-                    dataKey={name[iso]}
+                    dataKey={iso}
                     color="#4090c0"
                     logMode={logSelected ? true : undefined}
                     freqMode={freqSelected ? true : undefined}

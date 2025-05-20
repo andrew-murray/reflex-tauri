@@ -23,65 +23,77 @@ const makeColumns = (onSelectImageIndex) =>
     // assert(StaticColumnDefs[2].accessorKey === "com_adobe_rating");
 
     let defs = [...StaticColumnDefs];
-    defs[0] = Object.assign(
-        {},
-        defs[0],
-        {cell : ({cell, row}) => {
-            const path = row.original["com_adobe_absoluteFilepath"];
-            const image_id = row.original["imageid"];
-            let reducedPath = path;
-            if(path.includes("/") || path.includes("\\"))
-            {
-                // split on sequences of "\\" or "/" of any length
-                // and get last element
-                reducedPath = path.split(/[\\\/]+/).slice(-1)[0];
-            }
-            const maxLength = 16;
-            const maxCharPath = reducedPath.length > maxLength ? reducedPath.slice(0,maxLength-3) + "..." : reducedPath;
-            return <React.Fragment>
-                <div style={{display: "flex", alignItems: "center"}}>
-                    <span title={path}>
-                        {maxCharPath}
-                    </span>
-                    <IconButton aria-label="copy" size="small"
-                        onClick={(e)=>{
-                            navigator.clipboard.writeText(path)
-                        }}
-                    >
-                      <ContentCopyIcon fontSize="inherit" />
-                    </IconButton>
-                    <IconButton aria-label="slideshow" size="small"
-                        onClick={()=>{onSelectImageIndex(row.index);}}
-                    >
-                      <SlideshowIcon fontSize="inherit" />
-                    </IconButton>
-                </div>
-            </React.Fragment>
-        }}
-    );
+    // TODO: Remove this dependence on the filepath being at this index
+    if( defs[0].accessorKey === "com_adobe_absoluteFilepath" || defs[0].accessorKey === "filename")
+    {
+        defs[0] = Object.assign(
+            {},
+            defs[0],
+            {cell : ({cell, row}) => {
+                const path = row.original[defs[0].accessorKey];
+                // TODO: imageid ??? 
+                const image_id = row.original["imageid"];
+                let reducedPath = path;
+                if(path.includes("/") || path.includes("\\"))
+                {
+                    // split on sequences of "\\" or "/" of any length
+                    // and get last element
+                    reducedPath = path.split(/[\\\/]+/).slice(-1)[0];
+                }
+                const maxLength = 16;
+                const maxCharPath = reducedPath.length > maxLength ? reducedPath.slice(0,maxLength-3) + "..." : reducedPath;
+                return <React.Fragment>
+                    <div style={{display: "flex", alignItems: "center"}}>
+                        <span title={path}>
+                            {maxCharPath}
+                        </span>
+                        <IconButton aria-label="copy" size="small"
+                            onClick={(e)=>{
+                                navigator.clipboard.writeText(path)
+                            }}
+                        >
+                          <ContentCopyIcon fontSize="inherit" />
+                        </IconButton>
+                        <IconButton aria-label="slideshow" size="small"
+                            onClick={()=>{onSelectImageIndex(row.index);}}
+                        >
+                          <SlideshowIcon fontSize="inherit" />
+                        </IconButton>
+                    </div>
+                </React.Fragment>
+            }}
+        );
+    }
 
-    defs[2] = Object.assign(
-        {},
-        defs[2],
-        {cell : ({ cell, row }) => {
-            const ratingVal = row.original["com_adobe_rating"];
-            // note that: it's quite hard to see the "disabled" rating in action
-            // There are some on page-13 of my normal manual-test-data (if page-size=50)
-            // In folder "20230923 Walk about Town - Wabi Sabi"
-            return <Rating
-                value={ ratingVal === "" ? 0 : ratingVal}
-                readOnly
-                size="small"
-                disabled={ratingVal === "" ? true : undefined}
-            />
-        }}
-    );
+    // TODO: Remove this dependence on it being at this index
+    // there's no equivalent in the EXIF metadata
+    if(defs[2].accessorKey === "com_adobe_rating")
+    {
+        defs[2] = Object.assign(
+            {},
+            defs[2],
+            {cell : ({ cell, row }) => {
+                const ratingVal = row.original["com_adobe_rating"];
+                // note that: it's quite hard to see the "disabled" rating in action
+                // There are some on page-13 of my normal manual-test-data (if page-size=50)
+                // In folder "20230923 Walk about Town - Wabi Sabi"
+                return <Rating
+                    value={ ratingVal === "" ? 0 : ratingVal}
+                    readOnly
+                    size="small"
+                    disabled={ratingVal === "" ? true : undefined}
+                />
+            }}
+        );
+    }
 
     for (let i = 0; i < defs.length; ++i)
     {
         const k = defs[i].accessorKey;
-        if(i === 0){ continue; }
-        if(i === 2){ continue; }
+        if( k === "com_adobe_absoluteFilepath" || k === "filename" || k === "com_adobe_rating" )
+        {
+            continue;
+        }
         defs[i] = Object.assign(
             {},
             {

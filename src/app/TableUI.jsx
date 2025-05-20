@@ -28,7 +28,6 @@ import FilterAltOffIcon from '@mui/icons-material/FilterAltOff';
 import DoneIcon from '@mui/icons-material/Done';
 import ClearIcon from '@mui/icons-material/Clear';
 import { ChangeEvent, FC, memo, ReactElement, useMemo, useState, useCallback, Fragment } from "react";
-import {titles} from "./CameraData";
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
