@@ -77,8 +77,10 @@ function computeFolderAndFilesystemPathsFromImages(images)
   for (const image of images)
   {
     // TODO: where to handle null
-    folders.add(image["com_adobe_folder"]);
-    const filepath = image["com_adobe_absoluteFilepath"];
+    // folders.add(image["com_adobe_folder"]);
+    folders.add(image["folder"]);
+    // const filepath = image["com_adobe_absoluteFilepath"];
+    const filepath = image["filename"];
     const paths = filepath.split(pathsep);
      // remove filename 
     const realFolders = paths.slice(0, paths.length - 1);
