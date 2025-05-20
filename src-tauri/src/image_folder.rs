@@ -179,7 +179,7 @@ fn read_file_with_rexif(folder: &String, filename: &String) -> (ImagePaths, Opti
     }
 }
 
-pub fn index_folder(root_path: &String) -> anyhow::Result<HashMap<String, (ImagePaths, Option<ImageData>)>>
+pub fn index_folder(original_root_path: &String, root_path: &String) -> anyhow::Result<HashMap<String, (ImagePaths, Option<ImageData>)>>
 {
     let mut file_metadata : HashMap<String, (ImagePaths, Option<ImageData>)> = HashMap::new();
     for entry in fs::read_dir(&root_path)? {
@@ -195,7 +195,7 @@ pub fn index_folder(root_path: &String) -> anyhow::Result<HashMap<String, (Image
                     anyhow::anyhow!("Failed to convert os path to string")
                 ));
             }
-            let sub_result =  index_folder(conv_path.as_ref().unwrap());
+            let sub_result =  index_folder(original_root_path, conv_path.as_ref().unwrap());
             if sub_result.is_ok()
             {
                 file_metadata.extend(sub_result.unwrap());
@@ -217,7 +217,7 @@ pub fn index_folder(root_path: &String) -> anyhow::Result<HashMap<String, (Image
             }
             // we force
             let conv_path_val = conv_path.unwrap();
-            let load_result = read_file_with_rexif(root_path, &conv_path_val);
+            let load_result = read_file_with_rexif(original_root_path, &conv_path_val);
             if load_result.1.is_some()
             {
                 // println!("{:?}", load_result.1.as_ref().unwrap());
