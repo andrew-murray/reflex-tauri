@@ -234,7 +234,10 @@ pub fn make_image_data_from_exif(folder: Option<String>, filename: String, exif_
     let datetime_original = get_string_from_tags(exif_fields, ExifTag::DateTimeOriginal);
     let model = get_string_from_tags(exif_fields, ExifTag::Model);
     let lens_model = get_string_from_tags(exif_fields, ExifTag::LensModel);
-    let shutter_speed_value = get_f64_from_tags(exif_fields, ExifTag::ShutterSpeedValue);
+    // shutter_speed_value in the exif, is kinda awkward
+    // https://photo.stackexchange.com/a/108823
+    // Exposure time gives me the float I expect with no additional work.
+    let shutter_speed_value = get_f64_from_tags(exif_fields, ExifTag::ExposureTime);
     let aperture_value = get_f64_from_tags(exif_fields, ExifTag::ApertureValue);
     let focal_length = get_f64_from_tags(exif_fields, ExifTag::FocalLength);
     let iso_speed_rating = get_u16_from_tags(exif_fields, ExifTag::ISOSpeedRatings);
