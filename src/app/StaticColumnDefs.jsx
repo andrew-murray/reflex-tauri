@@ -93,14 +93,16 @@ const StaticColumnDefs = [
         header: "Metering",
         filterable: true,
         plottable: true
-    },
-    {
-        // accessorKey:"com_adobe_flash",
-        accessorKey:"flash",
-        header: "Flash",
-        filterable: true,
-        plottable: true
     }
+    // flash is really messy the strings are horrendously complicated, let's remove it for now
+    // as *I* don't care
+    // {
+    //     // accessorKey:"com_adobe_flash",
+    //     accessorKey:"flash",
+    //     header: "Flash",
+    //     filterable: true,
+    //     plottable: true
+    // }
     // the feature set for these columns is too limited/poor that I think it's better to remove them
     // {
     //     accessorKey:"com_adobe_imageFileDimensions",
