@@ -7,6 +7,11 @@ const exif_shutter = "shutter_speed_value";
 const exif_aperture = "aperture_value";
 const exif_iso = "iso_speed_rating";
 
+const exif_metering_mode = "metering_mode";
+const exif_flash = "flash";
+const exif_exposure_program = "exposure_program";
+
+
 export const fields = {
   adobe_shutter,
   adobe_aperture,
@@ -22,6 +27,52 @@ export const titles = {
   [adobe_iso]: "ISO",
   [exif_iso]: "ISO",
   [adobe_focalLength]: "Focal Length"
+};
+
+export const formatters = {
+  [exif_metering_mode]: (s) => {
+    const knownValues = new Map([
+      [0, "Unknown"],
+      [1, "Average"],
+      [2, "Center-weight"],
+      [3, "Spot"],
+      [4, "Multi spot"],
+      [5, "Pattern"],
+      [6, "Partial"],
+      [255, "Other"]
+    ]);
+    if (knownValues.has(s))
+    {
+      return knownValues.get(s);
+    }
+    else
+    {
+      // perhaps not the best choice, since this is also a value in the map
+      return "Unknown";
+    }
+  },
+  [exif_exposure_program]: (s) => {
+    const knownValues = new Map([
+      [0, "Not defined"],
+      [1, "Manual"],
+      [2, "Normal"],
+      [3, "Aperture"],
+      [4, "Shutter"],
+      [5, "Creative"],
+      [6, "Action"],
+      [7, "Portrait"],
+      [8, "Landscape"]
+    ]);
+    if (knownValues.has(s))
+    {
+      return knownValues.get(s);
+    }
+    else
+    {
+      // perhaps not the best choice, since this is also a value in the map
+      return "Not defined";
+    }
+  }
 };
 
 export const parsers = {

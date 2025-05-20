@@ -5,6 +5,7 @@ import Rating from '@mui/material/Rating';
 import Typography from '@mui/material/Typography';
 import TableUI from "./TableUI";
 import StaticColumnDefs from "./StaticColumnDefs";
+import {formatters} from "./CameraData";
 
 import IconButton from '@mui/material/IconButton';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -77,6 +78,20 @@ const makeRatingColumn = (def) =>
     );
 };
 
+const makeDefaultColumnForEnum = (def, toString) => {
+    return Object.assign(
+        {},
+        {
+            cell: ({ cell, row }) => {
+                return <span style={{minWidth:"5vw"}}>{toString(row.original[def.accessorKey])}</span>;
+            }
+        },
+        def
+    );
+}
+
+
+
 const makeDefaultColumn = (def) => {
     return Object.assign(
         {},
@@ -102,6 +117,13 @@ const makeColumns = (onSelectImageIndex) =>
         else if(k === "com_adobe_absoluteFilepath" || k === "filename")
         {
             defs[i] = makeFilenameColumn( defs[i], onSelectImageIndex );
+        }
+        else if(k in formatters)
+        {
+            defs[i] = makeDefaultColumnForEnum(
+                defs[i],
+                formatters[k]
+            );
         }
         else
         {
