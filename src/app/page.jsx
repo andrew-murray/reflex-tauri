@@ -298,13 +298,15 @@ export default function Home() {
           return;
         }
         setInProgress(true);
-        // todo: progressively fetch some images
+        // todo: progressively fetch some images in chunks
+        // (or have the table fetch them dynamically?)
         invoke("get_available_images", {offset: 0, limit: 100}).then(
           (response) => {
             if(mounted)
             {
               console.log("received available_images response");
               console.log({response});
+              setImages( response );
               /*
               if( response.conf_dirs !== null)
               {
@@ -319,6 +321,7 @@ export default function Home() {
               setRootFolderToSearch(response.root_dir);
               */
             }
+            setInProgress(false);
           }
         );
       };
