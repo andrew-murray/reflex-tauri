@@ -1,5 +1,5 @@
 import { BarChart, PieChart, Pie, Bar, Rectangle, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label } from 'recharts';
-import {parsers, titles} from "./CameraData";
+import {formatters, parsers, titles} from "./CameraData";
 import { scaleSymlog } from 'd3-scale';
 const customLogScale = scaleSymlog();
 
@@ -25,6 +25,7 @@ export function GetFormattedData(data, dataKey)
   let valueCounts = new Map();
   for(const d of data)
   {
+    // TODO: Drop null? Is this the right place?
     if (d[dataKey] === null)
     {
       continue;
@@ -34,12 +35,29 @@ export function GetFormattedData(data, dataKey)
   const defaultParser = (s) => {
     return s;
   }
+  if (dataKey in parsers && dataKey in formatters)
+  {
+    // ERROR!! Somehow?
+  }
   const parserForField = parsers[dataKey] || defaultParser;
-  // TODO: a null value, gets sorted ... where? How are we really handling null?
-  const formattedData = [...valueCounts.entries()].map( (kv, index) => { 
-    return {"name": kv[0], "value": parserForField(kv[0]), "count": kv[1],"fill": ColorPalette[ index % ColorPalette.length]};
-  }).toSorted( (a,b) => a.value - b.value );
-  return formattedData;
+  if (dataKey in formatters)
+  {
+    // assume the field is natively numeric, and we want to change the labels
+    // TODO: a null value, gets sorted ... where? How are we really handling null?
+    const formatter = formatters[dataKey];
+    const formattedData = [...valueCounts.entries()].map( (kv, index) => { 
+      return {"name": formatter(kv[0]), "value": kv[0], "count": kv[1],"fill": ColorPalette[ index % ColorPalette.length]};
+    }).toSorted( (a,b) => a.value - b.value );
+    return formattedData;
+  }
+  else
+  {
+    // TODO: a null value, gets sorted ... where? How are we really handling null?
+    const formattedData = [...valueCounts.entries()].map( (kv, index) => { 
+      return {"name": kv[0], "value": parserForField(kv[0]), "count": kv[1],"fill": ColorPalette[ index % ColorPalette.length]};
+    }).toSorted( (a,b) => a.value - b.value );
+    return formattedData;
+  }
 }
 
 // TODO: Make API for the graphs match? Data is currently not compatible
