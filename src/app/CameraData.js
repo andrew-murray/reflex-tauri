@@ -139,3 +139,31 @@ export const parsers = {
     }
   }
 };
+
+export const ConversionKeys = {
+  "filename": "com_adobe_absoluteFilepath",
+  "folder": "com_adobe_folder",
+  "datetime_original": "com_adobe_dateTime",
+  "model": "com_adobe_model",
+  "lens_model":"com_adobe_lens",
+  "shutter_speed_value": "com_adobe_shutterSpeedValue",
+  "aperture_value": "com_adobe_apertureValue",
+  "focal_length": "com_adobe_focalLength",
+  "iso_speed_rating": "com_adobe_ISOSpeedRating",
+  "exposure_program": "com_adobe_exposureProgram",
+  "metering_mode": "com_adobe_meteringMode",
+  "flash": "com_adobe_flash",
+  "Raw Dims": "com_adobe_imageFileDimensions",
+  "Crop Dims":"com_adobe_imageCroppedDimensions"
+};
+
+const defaultParser = (s) => {return s;};
+export const Conversion = Object.fromEntries(
+  Object.entries(ConversionKeys).map( 
+    kv => [
+      kv[0], 
+      (kv[1] in parsers ? (image) => { return parsers[kv[1]](image[kv[1]]); } 
+        : (image) => { return defaultParser(image[kv[1]]); })
+    ]
+  )
+);

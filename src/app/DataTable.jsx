@@ -104,7 +104,7 @@ const makeDefaultColumn = (def) => {
     );
 }
 
-const makeColumns = (onSelectImageIndex) =>
+const makeColumns = (onSelectImageIndex, repImage) =>
 {
     let defs = [...StaticColumnDefs];
     for (let i = 0; i < defs.length; ++i)
@@ -130,8 +130,10 @@ const makeColumns = (onSelectImageIndex) =>
             defs[i] = makeDefaultColumn( defs[i] );
         }
     }
-
-    return defs;
+    const filteredDefs = defs.filter(
+        d => d.optional !== true || d.accessorKey in repImage
+    );
+    return filteredDefs;
 };
 
 // For pagination, define maximum of data per page
@@ -173,10 +175,10 @@ const StaffTable = ({images, filteredImages, filtersByMetric, onSelectMetric, on
     });
 
     const Columns = React.useMemo( () => {
-            const Columns = makeColumns(onSelectImageIndex);
+            const Columns = makeColumns(onSelectImageIndex, images[0]);
             return Columns;
         },
-        []
+        [images]
     );
     const DataLength = images.length;
 

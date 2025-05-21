@@ -32,6 +32,13 @@ const StaticColumnDefs = [
         plottable: true
     },
     {
+        accessorKey:"com_adobe_rating",
+        header: "Rating",
+        filterable: true,
+        plottable: true,
+        optional: true
+    },
+    {
         // accessorKey:"com_adobe_dateTime",
         accessorKey:"datetime_original",
         header: "Date/Time",

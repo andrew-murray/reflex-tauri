@@ -20,6 +20,7 @@ import { readFile } from '@tauri-apps/plugin-fs';
 import { invoke } from '@tauri-apps/api/core';
 import Grid from '@mui/material/Grid';
 import { listen } from '@tauri-apps/api/event';
+import {Conversion} from "./CameraData";
 
 // todo: it's a bit awkward to duplicate this width and easier here
 // unclear how to share this code
@@ -367,9 +368,17 @@ export default function Home() {
             const metadataChunk = metadata.queries.select.images(localDB, chunkLength, currentTotal, "imageid DESC");
             // todo: Andy reckon's he's guessed a bug, as he thinks he sees our image list getting "duplicated"
             // into itself. Let's leave this fix here and diagnose later, if this is the right fix.
+            const metadataChunkAsImages = metadataChunk.map(
+              image => Object.assign(
+                image,
+                Object.fromEntries(
+                  Object.entries(Conversion).map(kv => [kv[0], kv[1](image)])
+                )
+              )
+            );
             if (currentTotal === 0)
             {
-              setImages(metadataChunk);
+              setImages(metadataChunkAsImages);
             }
             else
             {
