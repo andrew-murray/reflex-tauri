@@ -25,6 +25,10 @@ export function GetFormattedData(data, dataKey)
   let valueCounts = new Map();
   for(const d of data)
   {
+    if (d[dataKey] === null)
+    {
+      continue;
+    }
     valueCounts.set(d[dataKey], (valueCounts.get(d[dataKey]) || 0) + 1);
   }
   const defaultParser = (s) => {
