@@ -64,7 +64,7 @@ const makeRatingColumn = (def) =>
         {},
         def,
         {cell : ({ cell, row }) => {
-            const ratingVal = row.original["com_adobe_rating"];
+            const ratingVal = row.original["rating"];
             // note that: it's quite hard to see the "disabled" rating in action
             // There are some on page-13 of my normal manual-test-data (if page-size=50)
             // In folder "20230923 Walk about Town - Wabi Sabi"
@@ -110,11 +110,11 @@ const makeColumns = (onSelectImageIndex, repImage) =>
     for (let i = 0; i < defs.length; ++i)
     {
         const k = defs[i].accessorKey;
-        if (k === "com_adobe_rating")
+        if (k === "rating")
         {
             defs[i] = makeRatingColumn( defs[i] );
         }
-        else if(k === "com_adobe_absoluteFilepath" || k === "filename")
+        else if(k === "filename")
         {
             defs[i] = makeFilenameColumn( defs[i], onSelectImageIndex );
         }

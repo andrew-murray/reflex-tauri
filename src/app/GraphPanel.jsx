@@ -62,7 +62,6 @@ function GraphSettingsPanel({logSelected, onSetLogMode, freqSelected, onSetFreqM
 }
 
 export default function GraphPanel({images, logSelected, onSetLogMode, freqSelected, onSetFreqMode, ratingMode, onSetRatingMode}) {
-    console.log({images});
     // graphs are going to be [shutter, aperture, ISO] naturally
     const shutter = "shutter_speed_value"; // fields.shutter;
     const aperture = "aperture_value"; // fields.aperture;
@@ -92,9 +91,9 @@ export default function GraphPanel({images, logSelected, onSetLogMode, freqSelec
                             } 
                         };
                         acc[field][value].count += 1;
-                        if (image["com_adobe_rating"] !== undefined)
+                        if (image.rating !== undefined)
                         {
-                            acc[field][value].ratingCounts[image["com_adobe_rating"]] += 1;
+                            acc[field][value].ratingCounts[image.rating] += 1;
                         }
                     }
                     return acc;
@@ -142,12 +141,6 @@ export default function GraphPanel({images, logSelected, onSetLogMode, freqSelec
                         ratingFreqs
                     });
                 }
-                console.log(
-                {
-                    field,
-                    outputFieldValues
-                }
-                )
                 if (field === shutter)
                 {
                     outputFieldValues.sort(

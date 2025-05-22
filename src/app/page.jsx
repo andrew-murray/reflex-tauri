@@ -20,7 +20,7 @@ import { readFile } from '@tauri-apps/plugin-fs';
 import { invoke } from '@tauri-apps/api/core';
 import Grid from '@mui/material/Grid';
 import { listen } from '@tauri-apps/api/event';
-import {Conversion} from "./CameraData";
+import * as CameraData from "./CameraData";
 
 // todo: it's a bit awkward to duplicate this width and easier here
 // unclear how to share this code
@@ -307,7 +307,7 @@ export default function Home() {
             {
               console.log("received available_images response");
               console.log({response});
-              setImages( response );
+              setImages( response.map((x) => CameraData.makeImageFromExif(x)) );
               /*
               if( response.conf_dirs !== null)
               {
@@ -369,12 +369,7 @@ export default function Home() {
             // todo: Andy reckon's he's guessed a bug, as he thinks he sees our image list getting "duplicated"
             // into itself. Let's leave this fix here and diagnose later, if this is the right fix.
             const metadataChunkAsImages = metadataChunk.map(
-              image => Object.assign(
-                image,
-                Object.fromEntries(
-                  Object.entries(Conversion).map(kv => [kv[0], kv[1](image)])
-                )
-              )
+              (x) => CameraData.makeImageFromLightroom(x)
             );
             if (currentTotal === 0)
             {
@@ -382,7 +377,7 @@ export default function Home() {
             }
             else
             {
-              setImages( prevImages => prevImages.concat(metadataChunk));
+              setImages( prevImages => prevImages.concat(metadataChunkAsImages));
             }
             if(metadataChunk.length < chunkLength)
             {

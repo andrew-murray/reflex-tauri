@@ -30,6 +30,9 @@ export const titles = {
 };
 
 export const formatters = {
+};
+
+export const exif_parsers = {
   [exif_metering_mode]: (s) => {
     const knownValues = new Map([
       [0, "Unknown"],
@@ -130,7 +133,6 @@ export const parsers = {
     if (wsIndex === -1)
     {
       console.log("warning: received null/unexpected data");
-      console.log(s)
       return null;
     }
     else
@@ -140,30 +142,47 @@ export const parsers = {
   }
 };
 
-export const ConversionKeys = {
-  "filename": "com_adobe_absoluteFilepath",
-  "folder": "com_adobe_folder",
-  "datetime_original": "com_adobe_dateTime",
-  "model": "com_adobe_model",
-  "lens_model":"com_adobe_lens",
-  "shutter_speed_value": "com_adobe_shutterSpeedValue",
-  "aperture_value": "com_adobe_apertureValue",
-  "focal_length": "com_adobe_focalLength",
-  "iso_speed_rating": "com_adobe_ISOSpeedRating",
-  "exposure_program": "com_adobe_exposureProgram",
-  "metering_mode": "com_adobe_meteringMode",
-  "flash": "com_adobe_flash",
-  "Raw Dims": "com_adobe_imageFileDimensions",
-  "Crop Dims":"com_adobe_imageCroppedDimensions"
+export const makeImageFromExif = (record) => {
+  // it seems a little more reliable to translate our enums to strings
+  // rather than the adobe strings to enums
+  return Object.assign(
+    {},
+    record,
+    {
+      exposure_program: exif_parsers["exposure_program"](record["exposure_program"]),
+      metering_mode: exif_parsers["metering_mode"](record["metering_mode"]),
+      // we don't include rating, so that the graph knows to drop this column
+      // rating: null,
+      exif: record,
+      adobe: null
+    }
+  );
 };
 
-const defaultParser = (s) => {return s;};
-export const Conversion = Object.fromEntries(
-  Object.entries(ConversionKeys).map( 
-    kv => [
-      kv[0], 
-      (kv[1] in parsers ? (image) => { return parsers[kv[1]](image[kv[1]]); } 
-        : (image) => { return defaultParser(image[kv[1]]); })
-    ]
-  )
-);
+export const makeImageFromLightroom = (record) => {
+  // various fields can be copied like for like
+  // but not all!
+  const image = {
+    filename: record["com_adobe_absoluteFilepath"],
+    folder: record["com_adobe_folder"],
+    model: record["com_adobe_model"],
+    lens_model: record["com_adobe_lens"],
+
+    datetime_original: record["com_adobe_dateTime"],
+
+    focal_length: parsers[adobe_focalLength](record[adobe_focalLength]),
+    shutter_speed_value: parsers[adobe_shutter](record[adobe_shutter]),
+    aperture_value: parsers[adobe_aperture](record[adobe_aperture]),
+    iso_speed_rating: parsers[adobe_iso](record[adobe_iso]),
+
+    exposure_program: record["com_adobe_exposureProgram"],
+    metering_mode: record["com_adobe_meteringMode"],
+    // flash: record["com_adobe_flash"]
+
+    rating: record["com_adobe_rating"],
+
+    exif: null,
+    adobe: record
+  };
+  return image;
+};

@@ -32,7 +32,7 @@ const StaticColumnDefs = [
         plottable: true
     },
     {
-        accessorKey:"com_adobe_rating",
+        accessorKey:"rating",
         header: "Rating",
         filterable: true,
         plottable: true,
