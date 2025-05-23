@@ -30,7 +30,7 @@ export default function TempLightboxDialog({images, activeImageIndex, imageToOri
       images[index], 
       {
         type: "custom-slide",
-        orientation: imageToOrientation[images[index].imageid]
+        orientation: images[index].adobe !== null ? imageToOrientation[images[index].id] : undefined
       })
     );
   });
