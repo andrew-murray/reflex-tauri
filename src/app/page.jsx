@@ -219,13 +219,11 @@ export default function Home() {
   const [images, setImages] = React.useState([]);
   const [filteredImageState, setFilteredImageState] = React.useState({
     prevImages: [],
-    prevFolderFilters: [],
     prevFilesystemFilters: [],
     prevFiltersByMetric: {},
     filteredImages: []
   });
   const [navOpen, setNavOpen] = React.useState(true);
-  const [folderFilters, setFolderFilters] = React.useState([]);
   const [filesystemFilters, setFilesystemFilters] = React.useState([]);
   const [filtersByMetric, setFiltersByMetric] = React.useState({});
   const [metricsToPlot, setMetricsToPlot] = React.useState([]);
@@ -520,19 +518,6 @@ export default function Home() {
     },
     []
   );
-  const onFilterFolder = React.useCallback( 
-    (event, ids)=> {
-      setFolderFilters(ids);
-    },
-    []
-  );
-  const onFilterFilesystem = React.useCallback( 
-    (event, id)=> {
-      setFilesystemFilters([id]);
-    },
-    []
-  );
-
   const onSetFiltersForMetric = React.useCallback(
     (metricKey, filters) => {
       setFiltersByMetric(
@@ -557,18 +542,32 @@ export default function Home() {
     },
     []
   );
+  const onFilterFolder = React.useCallback( 
+    (event, ids)=> {
+      onSetFiltersForMetric(
+        "folder",
+        ids.length === 0 ? undefined : ids
+      )
+    },
+    []
+  );
+  const onFilterFilesystem = React.useCallback( 
+    (event, id)=> {
+      setFilesystemFilters([id]);
+    },
+    []
+  );
 
   const filteredImages = React.useEffect(
     ()=>{
       // todo: maybe we should capture the state of things at the start,
       // of this effect
       // so that we can abandon our computation as necessary?
-      if (folderFilters.length === 0 && filesystemFilters.length === 0 && Object.keys(filtersByMetric).length === 0)
+      if (filesystemFilters.length === 0 && Object.keys(filtersByMetric).length === 0)
       {
         // TODO: figure out how this is threaded, with relation to the inputs
         setFilteredImageState({
           prevImages: images,
-          prevFolderFilters: folderFilters,
           prevFilesystemFilters: filesystemFilters,
           prevFiltersByMetric: filtersByMetric,
           filteredImages: images
@@ -577,15 +576,11 @@ export default function Home() {
       }
 
       const imagesAreEqual = filteredImageState.prevImages === images;
-      const noFolderFilters = folderFilters.length === 0;
       const noFilesystemFilters = filesystemFilters.length === 0;
       const noMetricFilters = Object.keys(filtersByMetric).length === 0;
       if (imagesAreEqual)
       {
         // various accelerations to try and reuse the previous filtering result TODO: UNUSED!
-        const folderIsNoLessFiltered = filteredImageState.prevFolderFilters.length === 0 ||
-          folderFilters.length !== 0 && new Set(folderFilters).isSubsetOf(new Set(filteredImageState.prevFolderFilters));
-        const folderIsEqual = folderIsNoLessFiltered && filteredImageState.prevFolderFilters.length === folderFilters.length;
         // slightly different checks, because our filesystem is a tree!
         // are all our new filesystem filters, within our old filter?
         const filesystemIsNoLessFiltered = filteredImageState.prevFilesystemFilters.length === 0 
@@ -603,7 +598,7 @@ export default function Home() {
             [
               k, 
               (filtersByMetric[k] !== undefined && filtersByMetric[k].range !== undefined)
-              || (filteredImageState.prevFiltersByMetric[k]!== undefined && filteredImageState.prevFiltersByMetric[k].range !== undefined)
+              || (filteredImageState.prevFiltersByMetric[k] !== undefined && filteredImageState.prevFiltersByMetric[k].range !== undefined)
             ]
           )
         );
@@ -628,20 +623,15 @@ export default function Home() {
             )
         );
         const noLessFiltered = (
-          folderIsNoLessFiltered
-          && filesystemIsNoLessFiltered
+          filesystemIsNoLessFiltered
           && Object.values( metricIsNoLessFiltered ).every( b => b )
         );
-        // skipFolderFiltering if there's no criteria to pass - or we're filtering from a set that's already passed our condition
-        const skipFolderFiltering = noFolderFilters || ( noLessFiltered && folderIsEqual);
         // skipFilesystemFiltering if there's no criteria to pass - or we're filtering from a set that's already passed our condition
         const skipFilesystemFiltering = noFilesystemFilters || ( noLessFiltered && filesystemIsEqual);
         const skipMetricFiltering = noMetricFilters || (noLessFiltered && allMetricsEqual);
         const filterFunc = (image, index) => {
           // TODO: Remove adobe/filepath support
-          const folderForImage = "folder" in image ? image["folder"] : image["com_adobe_folder"];
           const filenameForImage = "filename" in image ? image["filename"] : image["com_adobe_absoluteFilepath"];
-          const folderPass = skipFolderFiltering || folderFilters.includes(folderForImage);
           const filesystemPass = skipFilesystemFiltering || filesystemFilters.some(
             fFilter => filenameForImage.startsWith(fFilter)
           );
@@ -661,13 +651,12 @@ export default function Home() {
                 }
             }
           }
-          return filesystemPass && folderPass && passMetricFilters;
+          return filesystemPass && passMetricFilters;
         }
         const imageBase = noLessFiltered ? filteredImageState.filteredImages : images;
         const filteredImages = imageBase.filter(filterFunc);
         setFilteredImageState({
           prevImages: images,
-          prevFolderFilters: folderFilters,
           prevFilesystemFilters: filesystemFilters,
           prevFiltersByMetric: filtersByMetric,
           filteredImages: filteredImages
@@ -680,9 +669,7 @@ export default function Home() {
         const filteredImages = images.filter(
           (image, index) => {
             // TODO: Remove adobe/filepath support
-            const folderForImage = "folder" in image ? image["folder"] : image["com_adobe_folder"];
             const filenameForImage = "filename" in image ? image["filename"] : image["com_adobe_absoluteFilepath"];
-            const folderPass =  noFolderFilters || folderFilters.includes(folderForImage);
             const filesystemPass = noFilesystemFilters || filesystemFilters.some(
               fFilter => filenameForImage.startsWith(fFilter)
             );
@@ -701,12 +688,11 @@ export default function Home() {
                 }
               }
             }
-            return filesystemPass && folderPass && passMetricFilters;
+            return filesystemPass && passMetricFilters;
           }
         );
         setFilteredImageState({
           prevImages: images,
-          prevFolderFilters: folderFilters,
           prevFilesystemFilters: filesystemFilters,
           prevFiltersByMetric: filtersByMetric,
           filteredImages: filteredImages
@@ -714,7 +700,7 @@ export default function Home() {
       }
       return () => {};
     },
-    [images, folderFilters, filesystemFilters, filtersByMetric]
+    [images, filesystemFilters, filtersByMetric]
   );
 
   // we use this to force stateful components to reset state
@@ -752,7 +738,7 @@ export default function Home() {
             open={navOpen}
             onSelectFolders={onFilterFolder}
             onSelectFilesystem={onFilterFilesystem}
-            selectedFolders={folderFilters}
+            selectedFolders={filtersByMetric.folder ?? []}
             selectedFilesystem={filesystemFilters}
             folderData={folderData}
             handleDrawerClose={handleDrawerClose}

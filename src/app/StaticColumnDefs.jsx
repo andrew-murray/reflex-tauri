@@ -28,7 +28,7 @@ const StaticColumnDefs = [
         // accessorKey:"com_adobe_folder",
         accessorKey: "folder",
         header: "Folder",
-        filterable: false,
+        filterable: true,
         plottable: true
     },
     {
