@@ -587,7 +587,7 @@ export default function Home() {
           || filesystemFilters.length !== 0 && filesystemFilters.every( currentFilter => filteredImageState.prevFilesystemFilters.some( 
               prevFilter => currentFilter.startsWith(prevFilter)
           ));
-        const filesystemIsEqual = filteredImageState.filesystemFilters === filesystemFilters;
+        const filesystemIsEqual = filteredImageState.prevFilesystemFilters === filesystemFilters;
         const allMetricsEqual = filtersByMetric === filteredImageState.prevFiltersByMetric;
         const unionKeys = Array.from(
           new Set(Object.keys(filtersByMetric)).union(new Set(Object.keys(filteredImageState.prevFiltersByMetric)))
