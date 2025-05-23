@@ -330,6 +330,61 @@ impl Serialize for ReflexCommandError {
 }
 pub type CommandResult<T> = std::result::Result<T, ReflexCommandError>;
 
+fn get_preview_image_response_for_adobe_image_id(
+    state: tauri::State<Mutex<AppState>>,
+    image_id: &str,
+    image_path: &str,
+    mode: &str
+) -> CommandResult<tauri::ipc::Response> {
+    let preview_path = get_preview_path_for_image_id(state.clone(), &image_id);
+    if !preview_path.is_some() {
+        // fallback to loading raw
+        // let raw_exists = fs::exists(&image_path).unwrap_or(false);
+        // if raw_exists
+        // {
+        //     let raw_result = rawloader::decode_file(&image_path);
+        // }
+        // else {
+        return Err(ReflexCommandError::from(
+            anyhow::anyhow!("Preview does not exist and raw file not accessible")
+                .context(format!("for image_id {}", image_id))
+                .context(format!("for image_path {}", image_path))
+        ));
+        // }
+    }
+
+    let pps = preview_path.unwrap();
+    let image_result = lrprev::get_jpeg_byte_segments_from_file(&pps);
+    if image_result.is_ok() {
+        let loaded_image_bytes = image_result.unwrap();
+        if loaded_image_bytes.len() == 0 {
+            return Err(ReflexCommandError::from(
+                anyhow::anyhow!("Found no images in preview file")
+                    .context(format!("for image_id {}", image_id))
+            ));
+        }
+        if mode == "lo" {
+            let bytes: Vec<u8> = loaded_image_bytes.get(0).unwrap().to_owned();
+            return Ok(Response::new(bytes));
+        }
+        if mode == "hi" {
+            let bytes = loaded_image_bytes
+                .get(loaded_image_bytes.len() - 1)
+                .unwrap()
+                .to_owned();
+            return Ok(Response::new(bytes));
+        }
+        return Err(ReflexCommandError::from(
+            anyhow::anyhow!("Failed to provide image (despite image loaded)")
+                .context(format!("for image_id {}", image_id)),
+        ));
+    } else {
+        return Err(ReflexCommandError::from(
+            anyhow::anyhow!("Failed to load image").context(format!("for image_id {}", image_id)),
+        ));
+    }
+}
+
 #[tauri::command]
 fn get_image_for_id(
     state: tauri::State<Mutex<AppState>>,
@@ -346,54 +401,12 @@ fn get_image_for_id(
     }
     if image_type == "adobe"
     {
-        // TODO: split function
-        let preview_path = get_preview_path_for_image_id(state.clone(), &image_id);
-        if !preview_path.is_some() {
-            // fallback to loading raw
-            // let raw_exists = fs::exists(&image_path).unwrap_or(false);
-            // if raw_exists
-            // {
-            //     let raw_result = rawloader::decode_file(&image_path);
-            // }
-            // else {
-            return Err(ReflexCommandError::from(
-                anyhow::anyhow!("Preview does not exist and raw file not accessible")
-                    .context(format!("for image_id {}", image_id))
-                    .context(format!("for image_path {}", image_path)),
-            ));
-            // }
-        }
-
-        let pps = preview_path.unwrap();
-        let image_result = lrprev::get_jpeg_byte_segments_from_file(&pps);
-        if image_result.is_ok() {
-            let loaded_image_bytes = image_result.unwrap();
-            if loaded_image_bytes.len() == 0 {
-                return Err(ReflexCommandError::from(
-                    anyhow::anyhow!("Found no images in preview file")
-                        .context(format!("for image_id {}", image_id)),
-                ));
-            }
-            if mode == "lo" {
-                let bytes: Vec<u8> = loaded_image_bytes.get(0).unwrap().to_owned();
-                return Ok(Response::new(bytes));
-            }
-            if mode == "hi" {
-                let bytes = loaded_image_bytes
-                    .get(loaded_image_bytes.len() - 1)
-                    .unwrap()
-                    .to_owned();
-                return Ok(Response::new(bytes));
-            }
-            return Err(ReflexCommandError::from(
-                anyhow::anyhow!("Failed to provide image (despite image loaded)")
-                    .context(format!("for image_id {}", image_id)),
-            ));
-        } else {
-            return Err(ReflexCommandError::from(
-                anyhow::anyhow!("Failed to load image").context(format!("for image_id {}", image_id)),
-            ));
-        }
+        return get_preview_image_response_for_adobe_image_id(
+            state.clone(),
+            &image_id,
+            &image_path,
+            &mode
+        );
     }
     else if image_type == "exif"
     {
