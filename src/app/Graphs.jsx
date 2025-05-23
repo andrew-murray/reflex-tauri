@@ -107,6 +107,44 @@ export function BarGraphForDialog({data, dataKey, color})
     </ResponsiveContainer>
 }
 
+export const labelFormatters = {
+  "iso_speed_rating" : (val) => {
+    const title = titles["iso_speed_rating"];
+    if (val === null || val === undefined || val === '')
+    {
+      return `${title} Unknown`;
+
+    }
+    else
+    {
+      return `${title} ${val}`;
+    }
+  },
+  "aperture_value": (val) => {
+    const title = titles["aperture_value"];
+    if (val === null || val === undefined || val === '')
+    {
+      return `${title} Unknown`;
+
+    }
+    else
+    {
+      return `${title} ƒ/${val}`;
+    }
+  },
+  "shutter_speed_value": (val) => {
+    const title = titles["shutter_speed_value"];
+    if (val === null || val === undefined || val === '')
+    {
+      return `${title} ${val}`;
+    }
+    else
+    {
+      return `${title} ${val}`;
+    }
+  }
+};
+
 // TODO: Make API for the graphs match? Data is currently not compatible
 export function BarGraph({data, dataKey, color, logMode, freqMode, ratingMode})
 {
@@ -132,12 +170,13 @@ export function BarGraph({data, dataKey, color, logMode, freqMode, ratingMode})
             dy={20}
         />
       </XAxis>
-      <YAxis scale={logMode ? customLogScale : "auto"}/>
-      <Tooltip 
-        formatter={(ratingMode && freqMode) ? percentFormatter : undefined}
+      <YAxis scale={logMode ? customLogScale : undefined}/>
+      <Tooltip  
+        labelFormatter={labelFormatters[dataKey]}
+        labelStyle={{color}}
       />
       {(ratingMode === undefined || ratingMode === null) && 
-        <Bar stackId="a" dataKey={"count"} name={"images"} fill={color} activeBar={<Rectangle fill="pink" stroke="blue" />} />
+        <Bar stackId="a" dataKey={"count"} name={"Images"} fill={color} activeBar={<Rectangle fill="pink" stroke="blue" />} />
       }
       {ratingMode !== null && ratingMode !== undefined && ratingMode.map((r,index) => <Bar
         stackId="a"
@@ -145,7 +184,9 @@ export function BarGraph({data, dataKey, color, logMode, freqMode, ratingMode})
         name={`rating=${r}`}
       />)}
       {ratingMode !== null && ratingMode !== undefined && 
-        <Legend />
+        <Legend 
+          wrapperStyle={{ bottom: 5}}
+        />
       }
     </BarChart>
   </ResponsiveContainer>
