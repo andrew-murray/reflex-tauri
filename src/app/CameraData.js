@@ -163,6 +163,8 @@ export const makeImageFromLightroom = (record) => {
   // various fields can be copied like for like
   // but not all!
   const image = {
+    id: record["imageid"],
+
     filename: record["com_adobe_absoluteFilepath"],
     folder: record["com_adobe_folder"],
     model: record["com_adobe_model"],

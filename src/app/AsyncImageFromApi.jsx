@@ -7,6 +7,22 @@ import Skeleton from '@mui/material/Skeleton';
 import "core-js/modules/esnext.uint8-array.to-base64.js";
 import { invoke } from '@tauri-apps/api/core';
 
+const getImageTypeFromImage = (image) => {
+  if (!!image["adobe"])
+  {
+    return "adobe";
+  }
+  else if(!!image["exif"])
+  {
+    return "exif";
+  }
+  else
+  {
+    console.log({image});
+    throw new Error("Unsupported image!");
+  }
+}
+
 export default function AsyncImageFromApi({image, imageStyle, orientation, width, height})
 {
   const [imgState, setImageState] = React.useState(null);
@@ -17,12 +33,14 @@ export default function AsyncImageFromApi({image, imageStyle, orientation, width
         let imageSrc = null;
         try
         {
-
+          console.log({image});
           const contents = await invoke(
             "get_image_for_id",
             {
-              imageId: image["imageid"].toString(),
-              imagePath: "com_adobe_absoluteFilepath" in image ? image["com_adobe_absoluteFilepath"] : image["filename"],
+              // TODO: We should have an id here in the exif case, but it hasn't been populated
+              imageId: image.id !== undefined ? image.id.toString() : "0",
+              imageType: getImageTypeFromImage(image),
+              imagePath: image["filename"],
               mode: "hi"
             }
           );
