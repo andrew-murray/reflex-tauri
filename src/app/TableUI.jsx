@@ -107,6 +107,9 @@ const filteredNumeric = [
 ];
 
 export function NumericFilterDialog({images, filteredImages, metricKey, filtersForMetric, handleClose, onSetFiltersForMetric, onSelectImageIndex}) {
+  // TODO: For shutterSpeed at least, we need to implement
+  // a different scale. So much of the shutter speed is in the (0,1) range, but ... it's reasonable to have values from 0-60
+  // https://mui.com/material-ui/react-slider/#non-linear-scale
   let title = metricKey;
   const matchedColumn = StaticColumnDefs.filter(c => c.accessorKey === metricKey)[0];
   if (matchedColumn !== undefined)
@@ -120,20 +123,27 @@ export function NumericFilterDialog({images, filteredImages, metricKey, filtersF
     [filteredImages, metricKey]
   );
   const [filters, setFilters] = useState( filtersForMetric === undefined ? null : filtersForMetric );
-  console.log({filtersForMetric});
-
   const handleChange = (event, newValues) => {
     setValues(newValues);
   };
 
-  const dataMin = Math.min(...formattedData.map(d => d.name));
-  const dataMax = Math.max(...formattedData.map(d => d.name));
+  const dataMin = formattedData.length === 0 ? 0 : Math.min(...formattedData.map(d => d.name));
+  const dataMax = formattedData.length === 0 ? 1 :Math.max(...formattedData.map(d => d.name));
   // even if our data exhibits a narrower range than our current filters, retain the current filters
   const filterMin = filtersForMetric !== undefined ? filtersForMetric.range[0] : dataMin;
   const filterMax = filtersForMetric !== undefined ? filtersForMetric.range[1] : dataMax;
 
   const [values, setValues] = React.useState(null);
 
+  const filterRange = filterMax - filterMin;
+
+  let filterIncrement = filterRange/100.0;
+  // let's arbitrarily clamp if we're dealing with teeny quantities
+  if (filterIncrement < 0.05)
+  {
+    filterIncrement = 0.05;
+  }
+  const sliderStep = Number(filterIncrement.toPrecision(2));
   return <Dialog
     open={true}
     onClose={handleClose}
@@ -170,6 +180,7 @@ export function NumericFilterDialog({images, filteredImages, metricKey, filtersF
           style={{width: "100%"}}
           min={filterMin}
           max={filterMax}
+          step={sliderStep}
         />
       </Box>
     </DialogContent>
