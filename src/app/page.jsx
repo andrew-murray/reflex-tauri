@@ -684,7 +684,7 @@ export default function Home() {
                 }
                 else
                 {
-                  passMetricFilters &= values.includes(image[metric]);
+                  passMetricFilters &= filter.includes(image[metric]);
                 }
               }
             }
