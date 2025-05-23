@@ -47,6 +47,7 @@ import StaticColumnDefs from "./StaticColumnDefs";
 import ListSubheader from '@mui/material/ListSubheader';
 import Slider from '@mui/material/Slider';
 import * as Graphs from "./Graphs"
+import Tooltip from '@mui/material/Tooltip';
 
 
 // Styles with styled-component
@@ -209,6 +210,20 @@ export function FilterDialog({images, filteredImages, metricKey, filtersForMetri
   );
   const [filters, setFilters] = useState( filtersForMetric === undefined ? null : filtersForMetric );
   const names = formattedData.map(d => d.name).toSorted();
+  const applyDisabled = filters !== null && filters.length === 0;
+  const makeApplyButton = () => {
+    return (
+      <Button
+        onClick={()=>{
+          onSetFiltersForMetric(metricKey, filters === null || filters.length === 0 ? undefined : filters);
+          handleClose();
+        }}
+        disabled={applyDisabled ? true : undefined}
+      >
+      Apply
+      </Button>
+    );
+  };
   return <Dialog
     open={true}
     onClose={handleClose}
@@ -269,11 +284,20 @@ export function FilterDialog({images, filteredImages, metricKey, filtersForMetri
     </div>
     </DialogContent>
     <DialogActions>
+      <Button onClick={()=>setFilters([])}>Clear All</Button>
+      <Button onClick={()=>setFilters(null)}>Select All</Button>
+      <div style={{flexGrow: 1}} />
       <Button onClick={handleClose}>Cancel</Button>
-      <Button onClick={()=>{ 
-        onSetFiltersForMetric(metricKey, filters === null ? undefined : filters);
-        handleClose();
-      }}>Apply</Button>
+      {applyDisabled && 
+        <Tooltip
+          title="Select some filters to apply"
+        >
+          <span>{makeApplyButton()}</span>
+        </Tooltip>
+      }
+      {!applyDisabled && 
+        makeApplyButton()
+      }
     </DialogActions>
   </Dialog>
 };
