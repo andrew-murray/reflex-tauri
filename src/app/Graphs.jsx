@@ -101,7 +101,10 @@ export function BarGraphForDialog({data, dataKey, color})
           />
         </XAxis>
         <YAxis />
-        <Tooltip />
+        <Tooltip 
+          labelFormatter={labelFormatters[dataKey]}
+          labelStyle={{color}}
+        />
         <Bar dataKey="count" fill={color} activeBar={<Rectangle fill="pink" stroke="blue" />} />
       </BarChart>
     </ResponsiveContainer>
