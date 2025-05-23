@@ -209,7 +209,7 @@ const isNoLessFiltered = (filters, prevFilters) => {
   }
   const filterSet = new Set(filters);
   const prevFilterSet = new Set(prevFilters);
-  return prevFilterSet.isSubsetOf(filterSet);
+  return filterSet.isSubsetOf(prevFilterSet);
 };
 
 export default function Home() {
