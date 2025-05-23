@@ -563,16 +563,18 @@ export default function Home() {
           ));
         const filesystemIsEqual = filteredImageState.filesystemFilters === filesystemFilters;
         const allMetricsEqual = filtersByMetric === filteredImageState.prevFiltersByMetric;
+        // FIXME: All this code filters by sets-of-values
+        // but some of the filters are numeric-ranges now
         const unionKeys = Array.from(
           new Set(Object.keys(filtersByMetric)).union(new Set(Object.keys(filteredImageState.prevFiltersByMetric)))
         );
         // for allMetricsEqual we check the same object, but now we care about value equal
         const metricIsEqual = Object.fromEntries(
             unionKeys.map(k => [k, arrayEqual(filtersByMetric[k], filteredImageState.prevFiltersByMetric[k])])
-          );
+        );
         const metricIsNoLessFiltered = Object.fromEntries(
             unionKeys.map(k => [k, isNoLessFiltered(filtersByMetric[k], filteredImageState.prevFiltersByMetric[k])])
-          );
+        );
         const noLessFiltered = (
           folderIsNoLessFiltered
           && filesystemIsNoLessFiltered

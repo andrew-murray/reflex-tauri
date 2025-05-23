@@ -45,6 +45,8 @@ import Checkbox from '@mui/material/Checkbox';
 import Typography from '@mui/material/Typography';
 import StaticColumnDefs from "./StaticColumnDefs";
 import ListSubheader from '@mui/material/ListSubheader';
+import Slider from '@mui/material/Slider';
+import * as Graphs from "./Graphs"
 
 
 // Styles with styled-component
@@ -96,8 +98,103 @@ export const StyledPagination = styled(Pagination)`
     margin-top: 0rem;
 `;
 
+const filteredNumeric = [
+  "iso_speed_rating",
+  "shutter_speed_value",
+  "aperture_value",
+  "focal_length"
+];
+
+export function NumericFilterDialog({images, filteredImages, metricKey, filtersForMetric, handleClose, onSetFiltersForMetric, onSelectImageIndex}) {
+  let title = metricKey;
+  const matchedColumn = StaticColumnDefs.filter(c => c.accessorKey === metricKey)[0];
+  if (matchedColumn !== undefined)
+  {
+    title = matchedColumn.header;
+  }
+  const formattedData = useMemo(
+    ()=>{
+      return GetFormattedData(filteredImages, metricKey);
+    },
+    [filteredImages, metricKey]
+  );
+  const [filters, setFilters] = useState( filtersForMetric === undefined ? null : filtersForMetric );
+  console.log({filtersForMetric});
+
+  const handleChange = (event, newValues) => {
+    setValues(newValues);
+  };
+
+  const dataMin = Math.min(...formattedData.map(d => d.name));
+  const dataMax = Math.max(...formattedData.map(d => d.name));
+  // even if our data exhibits a narrower range than our current filters, retain the current filters
+  const filterMin = filtersForMetric !== undefined ? filtersForMetric.range[0] : dataMin;
+  const filterMax = filtersForMetric !== undefined ? filtersForMetric.range[1] : dataMax;
+
+  const [values, setValues] = React.useState(null);
+
+  return <Dialog
+    open={true}
+    onClose={handleClose}
+    aria-labelledby="alert-dialog-title"
+    aria-describedby="alert-dialog-description"
+  >
+    <DialogTitle id="graph-dialog-title">
+      Filter by {title}
+    </DialogTitle>
+    <IconButton
+      onClick={handleClose}
+      style={{position: "absolute", right: 8, top: 8}}
+    >
+      <ClearIcon />
+    </IconButton>
+    <DialogContent
+      dividers
+      style={{padding: 10, minWidth: 500, maxHeight: 1200}}
+    >
+      <Box style={{display: "flex", justifyContent: "center", padding: 5}}>
+        <Paper style={{width: "100%", minWidth: 500, height: 400, padding: 10, overflow: "hidden"}}>
+          <Graphs.BarGraphForDialog
+            data={images}
+            dataKey={metricKey} 
+          />
+        </Paper>
+      </Box>
+      <Box style={{minHeight: 50, margin: "15px 25px 15px"}}>
+        <Slider
+          getAriaLabel={() => `${title} Filter Range`}
+          value={values === null ? [filterMin, filterMax] : values}
+          onChange={handleChange}
+          valueLabelDisplay="auto"
+          style={{width: "100%"}}
+          min={filterMin}
+          max={filterMax}
+        />
+      </Box>
+    </DialogContent>
+    <DialogActions>
+      <Button onClick={handleClose}>Cancel</Button>
+      <Button onClick={()=>{ 
+        onSetFiltersForMetric(metricKey, values === null ? undefined : { range: values });
+        handleClose();
+      }}>Apply</Button>
+    </DialogActions>
+  </Dialog>
+};
+
 export function FilterDialog({images, filteredImages, metricKey, filtersForMetric, handleClose, onSetFiltersForMetric, onSelectImageIndex}) {
 
+  if (filteredNumeric.includes(metricKey)){
+    return <NumericFilterDialog
+      images={images}
+      filteredImages={filteredImages}
+      metricKey={metricKey}
+      filtersForMetric={filtersForMetric}
+      handleClose={handleClose}
+      onSetFiltersForMetric={onSetFiltersForMetric}
+      onSelectImageIndex={onSelectImageIndex}
+    />
+  }
   let title = metricKey;
   const matchedColumn = StaticColumnDefs.filter(c => c.accessorKey === metricKey)[0];
   if (matchedColumn !== undefined)

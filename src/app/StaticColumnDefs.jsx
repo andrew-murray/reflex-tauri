@@ -32,7 +32,7 @@ const StaticColumnDefs = [
         plottable: true
     },
     {
-        accessorKey:"rating",
+        accessorKey: "rating",
         header: "Rating",
         filterable: true,
         plottable: true,
@@ -40,63 +40,63 @@ const StaticColumnDefs = [
     },
     {
         // accessorKey:"com_adobe_dateTime",
-        accessorKey:"datetime_original",
+        accessorKey: "datetime_original",
         header: "Date/Time",
         filterable: false,
         plottable: false
     },
     {
         // accessorKey:"com_adobe_model",
-        accessorKey:"model",
+        accessorKey: "model",
         header: "Camera",
         filterable: true,
         plottable: true
     },
     {
         // accessorKey:"com_adobe_lens",
-        accessorKey:"lens_model",
+        accessorKey: "lens_model",
         header: "Lens",
         filterable: true,
         plottable: true
     },
     {
         // accessorKey:"com_adobe_shutterSpeedValue",
-        accessorKey:"shutter_speed_value",
+        accessorKey: "shutter_speed_value",
         header: "Shutter Speed",
-        filterable: false,
+        filterable: true,
         plottable: true
     },
     {
         // accessorKey:"com_adobe_apertureValue",
-        accessorKey:"aperture_value",
+        accessorKey: "aperture_value",
         header: "Aperture",
-        filterable: false,
+        filterable: true,
         plottable: true
     },
     {
         // accessorKey:"com_adobe_focalLength",
-        accessorKey:"focal_length",
+        accessorKey: "focal_length",
         header: "Focal Length",
-        filterable: false,
+        filterable: true,
         plottable: true
     },
     {
         // accessorKey:"com_adobe_ISOSpeedRating",
-        accessorKey:"iso_speed_rating",
+        accessorKey: "iso_speed_rating",
         header: "ISO",
-        filterable: false,
+        filterable: true,
         plottable: true
     },
     {
         // accessorKey:"com_adobe_exposureProgram",
-        accessorKey:"exposure_program",
+        accessorKey: "exposure_program",
         header: "Exp. Program",
         filterable: true,
         plottable: true
     },
     {
         // accessorKey:"com_adobe_meteringMode",
-        accessorKey:"metering_mode",
+        accessorKey: "metering_mode",
         header: "Metering",
         filterable: true,
         plottable: true
