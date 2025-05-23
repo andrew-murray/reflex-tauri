@@ -165,6 +165,37 @@ const arrayEqual = (a, b) => {
     a.every((e,i) => e === b[i]);
 };
 
+const rangeIsEqual = (a,b) => {
+  if (a === b)
+  {
+    return true;
+  }
+  if( (a === undefined) ^ (b === undefined) )
+  {
+    return false;
+  }
+  if( (a.range === undefined) ^ (b.range === undefined) )
+  {
+    return false;
+  }
+  return a.range[0] === b.range[0] && a.range[1] === b.range[1];
+};
+
+const rangeIsNoLessFiltered = (filters, prevFilters) =>
+{
+  // was include everything
+  if( prevFilters === undefined )
+  {
+    return true;
+  } 
+  // was *not* include everything, but now is
+  if (filters === undefined)
+  {
+    return false;
+  }
+  return (filters.range[0] >= prevFilters.range[0]) && (filters.range[1] <= prevFilters.range[1]);
+};
+
 const isNoLessFiltered = (filters, prevFilters) => {
   // was include everything
   if( prevFilters === undefined )
@@ -563,17 +594,38 @@ export default function Home() {
           ));
         const filesystemIsEqual = filteredImageState.filesystemFilters === filesystemFilters;
         const allMetricsEqual = filtersByMetric === filteredImageState.prevFiltersByMetric;
-        // FIXME: All this code filters by sets-of-values
-        // but some of the filters are numeric-ranges now
         const unionKeys = Array.from(
           new Set(Object.keys(filtersByMetric)).union(new Set(Object.keys(filteredImageState.prevFiltersByMetric)))
         );
         // for allMetricsEqual we check the same object, but now we care about value equal
+        const filterIsNumeric = Object.fromEntries(
+          unionKeys.map(k => 
+            [
+              k, 
+              (filtersByMetric[k] !== undefined && filtersByMetric[k].range !== undefined)
+              || (filteredImageState.prevFiltersByMetric[k]!== undefined && filteredImageState.prevFiltersByMetric[k].range !== undefined)
+            ]
+          )
+        );
         const metricIsEqual = Object.fromEntries(
-            unionKeys.map(k => [k, arrayEqual(filtersByMetric[k], filteredImageState.prevFiltersByMetric[k])])
+            unionKeys.map(k => 
+              [
+                k, 
+                filterIsNumeric[k] ? 
+                  rangeIsEqual(filtersByMetric[k], filteredImageState.prevFiltersByMetric[k])
+                  : arrayEqual(filtersByMetric[k], filteredImageState.prevFiltersByMetric[k])
+              ]
+            )
         );
         const metricIsNoLessFiltered = Object.fromEntries(
-            unionKeys.map(k => [k, isNoLessFiltered(filtersByMetric[k], filteredImageState.prevFiltersByMetric[k])])
+            unionKeys.map(k => 
+              [
+                k, 
+                filterIsNumeric[k] ? 
+                rangeIsNoLessFiltered(filtersByMetric[k], filteredImageState.prevFiltersByMetric[k])
+                : isNoLessFiltered(filtersByMetric[k], filteredImageState.prevFiltersByMetric[k])
+              ]
+            )
         );
         const noLessFiltered = (
           folderIsNoLessFiltered
@@ -597,9 +649,16 @@ export default function Home() {
           if(!skipMetricFiltering)
           {
             // todo: we could do smarter per-metric skipping
-            for(const [metric, values] of Object.entries(filtersByMetric))
+            for(const [metric, filter] of Object.entries(filtersByMetric))
             {
-              passMetricFilters &= values.includes(image[metric]);
+                if (filter.range)
+                {
+                  passMetricFilters &= filter.range[0] <= image[metric] && image[metric] <= filter.range[1];
+                }
+                else
+                {
+                  passMetricFilters &= filter.includes(image[metric]);
+                }
             }
           }
           return filesystemPass && folderPass && passMetricFilters;
@@ -630,9 +689,16 @@ export default function Home() {
             let passMetricFilters = true;
             if (!noMetricFilters)
             {
-              for(const [metric, values] of Object.entries(filtersByMetric))
+              for(const [metric, filter] of Object.entries(filtersByMetric))
               {
-                passMetricFilters &= values.includes(image[metric]);
+                if (filter.range)
+                {
+                  passMetricFilters &= filter.range[0] <= image[metric] && image[metric] <= filter.range[1];
+                }
+                else
+                {
+                  passMetricFilters &= values.includes(image[metric]);
+                }
               }
             }
             return filesystemPass && folderPass && passMetricFilters;
