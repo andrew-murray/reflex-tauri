@@ -528,7 +528,7 @@ const TableUI = ({
                           onClick={() => onClickRow?.(cell, row)}
                           key={cell.id}
                           className="font-graphik"
-                          style={{lineHeight: 1}}
+                          style={{lineHeight: 1, maxHeight: "0.875rem"}}
                         >
                           {flexRender(
                             cell.column.columnDef.cell,
@@ -546,7 +546,7 @@ const TableUI = ({
                       <TableRow key={skeleton}>
                         {Array.from({ length: columnCount }, (x, i) => i).map(
                           (elm) => (
-                            <TableCell key={elm}>
+                            <TableCell key={elm} style={{lineHeight: 1, maxHeight: "0.875rem"}}>
                               <Skeleton height={skeletonHeight} />
                             </TableCell>
                           )

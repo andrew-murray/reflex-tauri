@@ -6,6 +6,8 @@ import Typography from '@mui/material/Typography';
 import TableUI from "./TableUI";
 import StaticColumnDefs from "./StaticColumnDefs";
 import {formatters} from "./CameraData";
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 
 import IconButton from '@mui/material/IconButton';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -33,27 +35,29 @@ const makeFilenameColumn = (def, onSelectImageIndex) =>
                 // and get last element
                 reducedPath = path.split(/[\\\/]+/).slice(-1)[0];
             }
-            const maxLength = 16;
+            // TODO: Could this maxLength expand with how much space
+            // we're actually allocating to the cell?
+            // Or alternatively just rely on content clipping?
+            const maxLength = 32;
             const maxCharPath = reducedPath.length > maxLength ? reducedPath.slice(0,maxLength-3) + "..." : reducedPath;
-            return <React.Fragment>
-                <div style={{display: "flex", alignItems: "center"}}>
-                    <span title={path}>
-                        {maxCharPath}
-                    </span>
-                    <IconButton aria-label="copy" size="small"
-                        onClick={(e)=>{
-                            navigator.clipboard.writeText(path)
-                        }}
-                    >
-                      <ContentCopyIcon fontSize="inherit" />
-                    </IconButton>
-                    <IconButton aria-label="slideshow" size="small"
-                        onClick={()=>{onSelectImageIndex(row.index);}}
-                    >
-                      <SlideshowIcon fontSize="inherit" />
-                    </IconButton>
-                </div>
-            </React.Fragment>
+            return <div style={{display: "flex", alignItems: "center", maxHeight: "inherit", textWrap: "nowrap"}}>
+                <span title={path} style={{textWrap: "nowrap", maxWidth: "10vw", overflow: "hidden"}}>
+                    {maxCharPath}
+                </span>
+                <span style={{flexGrow: 1}} />
+                <IconButton aria-label="copy" size="small"
+                    onClick={(e)=>{
+                        navigator.clipboard.writeText(path)
+                    }}
+                >
+                  <ContentCopyIcon fontSize="inherit" />
+                </IconButton>
+                <IconButton aria-label="slideshow" size="small"
+                    onClick={()=>{onSelectImageIndex(row.index);}}
+                >
+                  <SlideshowIcon fontSize="inherit" />
+                </IconButton>
+            </div>
         }}
     );
 };
@@ -68,12 +72,20 @@ const makeRatingColumn = (def) =>
             // note that: it's quite hard to see the "disabled" rating in action
             // There are some on page-13 of my normal manual-test-data (if page-size=50)
             // In folder "20230923 Walk about Town - Wabi Sabi"
-            return <Rating
-                value={ ratingVal === "" ? 0 : ratingVal}
-                readOnly
-                size="small"
-                disabled={ratingVal === "" ? true : undefined}
-            />
+
+            // Note: it's quite fiddly to get <Rating> to respect the fontSize of the parent and actually
+            // I don't like it when they do. The rating looks teeny tiny, relative to the cell-size (maybe I was doubly shrinking it?!)
+            // It's more convenient to hack this in place, than to customise the cell display though
+            // so we allow the rating to flow out into the cell-padding.
+            return <div style={{maxHeight: "0.875rem", overflowY: "visible"}}>
+                <Rating
+                    value={ ratingVal === "" ? 0 : ratingVal}
+                    readOnly
+                    size="small"
+                    disabled={ratingVal === "" ? true : undefined}
+                    style={{marginTop: -2}} // this is very tuned to our sizes right now, obviously!
+                />
+            </div>
         }}
     );
 };
@@ -83,7 +95,7 @@ const makeDefaultColumnForEnum = (def, toString) => {
         {},
         {
             cell: ({ cell, row }) => {
-                return <span style={{minWidth:"5vw"}}>{toString(row.original[def.accessorKey])}</span>;
+                return <span style={{minWidth:"5vw", maxHeight: "inherit", textWrap: "nowrap"}}>{toString(row.original[def.accessorKey])}</span>;
             }
         },
         def
@@ -97,7 +109,7 @@ const makeDefaultColumn = (def) => {
         {},
         {
             cell: ({ cell, row }) => {
-                return <span style={{minWidth:"5vw"}}>{row.original[def.accessorKey]}</span>;
+                return <span style={{minWidth:"5vw", maxHeight: "inherit", textWrap: "nowrap"}}>{row.original[def.accessorKey]}</span>;
             }
         },
         def
