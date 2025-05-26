@@ -212,11 +212,25 @@ const isNoLessFiltered = (filters, prevFilters) => {
   return filterSet.isSubsetOf(prevFilterSet);
 };
 
+function useWindowSize() {
+  const [size, setSize] = React.useState([0, 0]);
+  React.useLayoutEffect(() => {
+    function updateSize() {
+      setSize([window.innerWidth, window.innerHeight]);
+    }
+    window.addEventListener('resize', updateSize);
+    updateSize();
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
+  return size;
+};
+
 export default function Home() {
   const [db,setDB] = React.useState(null);
   const [SQL, setSQL] = React.useState(null);
   const [inProgress, setInProgress] = React.useState(false);
   const [images, setImages] = React.useState([]);
+  const windowSize = useWindowSize();
   const [filteredImageState, setFilteredImageState] = React.useState({
     prevImages: [],
     prevFilesystemFilters: [],
@@ -729,7 +743,10 @@ export default function Home() {
     setMetricsToPlot([metric]);
   });
   // FIXME: What should we render if we've filtered all the images out?
-
+  const spaceBetweenComponents = 16;
+  const availableHeight = windowSize[1] - 2 * spaceBetweenComponents; // top, middle, no-bottom
+  const graphPanelHeight = Math.max(Math.floor(availableHeight * 0.4), 300);
+  const tableHeight = Math.max(availableHeight - graphPanelHeight - 2, 300);
   return (<React.Fragment>        
       <CssBaseline />
       <Box sx={{ display: 'flex' }}>
@@ -745,10 +762,19 @@ export default function Home() {
             handleDrawerOpen={handleDrawerOpen}
           />
         }
-        <MainMinusDrawer open={navOpen} style={{textAlign: "center",   display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem"}}>
-          <div style={{width: "100%", minHeight: "80vh", margin: "auto", alignItems: "center"}}>
+        <MainMinusDrawer open={navOpen} style={{
+          textAlign: "center",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          paddingTop: spaceBetweenComponents,
+          paddingLeft: spaceBetweenComponents,
+          paddingRight: spaceBetweenComponents,
+          paddingBottom: 0
+          }}>
+          <div style={{width: "100%", margin: "auto", alignItems: "center", display: "flex", flexDirection: "column"}}>
           {(images.length !== 0 && !inProgress) &&
-            <div style={{width: "100%", height: "40vh"}}>
+            <Box style={{width: "100%", height: graphPanelHeight}}>
               <GraphPanel
                 images={filteredImageState.filteredImages}
                 logSelected={logMode}
@@ -758,17 +784,17 @@ export default function Home() {
                 freqSelected={freqMode}
                 onSetFreqMode={setFreqMode}
               />
-            </div>
+            </Box>
           }
           {(images.length !== 0 && !inProgress) &&
-            <Box style={{width: "100%"}}>
+            <Box style={{width: "100%", height: tableHeight, display: "flex", flexDirection: "column", marginTop: spaceBetweenComponents }}>
               <DataTable
                 key={uniqueDataKey}
 
                 images={images}
                 filteredImages={filteredImageState.filteredImages}
                 filtersByMetric={filtersByMetric}
-
+                fixedHeight={tableHeight}
                 onSelectMetric={selectMetric}
                 onSetFiltersForMetric={onSetFiltersForMetric}
 

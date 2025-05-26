@@ -93,10 +93,14 @@ export const StyledTableRow = styled(TableRow)(({ theme }) => {
   }
 });
 
+// TODO: It's a little annoying that we grow the pagination rather than "spreading out" the table
+// could that be managed?
 export const StyledPagination = styled(Pagination)`
     display: flex;
+    flex-grow: 1;
     justify-content: center;
     margin-top: 0rem;
+    min-height: 40px;
 `;
 
 const filteredNumeric = [
@@ -313,6 +317,25 @@ export function FilterDialog({images, filteredImages, metricKey, filtersForMetri
   </Dialog>
 };
 
+function useClientRectAndWatchResize() {
+  const [rect, setRect] = useState(null);
+  const ref = React.useCallback(node => {
+    if (node !== null) {
+      setRect(node.getBoundingClientRect());
+    }
+  }, []);
+  React.useEffect(() => {
+    if (!ref.current) return;
+    const resizeObserver = new ResizeObserver(() => {
+      console.log({boxRef, boxRect, paginationRect, paginationRef});
+      ref(ref.current);
+    });
+    resizeObserver.observe(ref.current);
+    return () => resizeObserver.disconnect(); // clean up 
+  }, []);
+  return [rect, ref];
+}
+
 const TableUI = ({
   images,
   filteredImages,
@@ -326,15 +349,24 @@ const TableUI = ({
   onClickRow,
   onSelectMetric,
   onSetFiltersForMetric,
+  fixedHeight,
   page,
   handlePageChange,
   searchLabel = "Search",
   EmptyText,
   children,
-  itemsPerPage,
   handleRow
 }) => {
     const [activeFilterDialog, setActiveFilterDialog] = useState(null);
+    const [fontSizeHeight, setFontSizeHeight] = React.useState(0);
+    const boxRef = useCallback(node => {
+      if (node !== null) {
+        // TODO: this is a pattern in a stackoverflow,
+        // however it's weird that we just discard "px"
+        const computedFontSize = parseFloat(getComputedStyle(node).fontSize);
+        setFontSizeHeight(computedFontSize);
+      }  
+    }, []);
     const memoizedData = useMemo(() => filteredImages, [filteredImages]);
     const memoizedColumns = useMemo(
         () => columns, 
@@ -345,6 +377,42 @@ const TableUI = ({
       [headerComponent]
     );
 
+
+    // const emSize = boxRef !== null ? parseFloat(getComputedStyle(boxRef.current).fontSize) : 0;
+    // header contains two buttons, vertically
+    // each sized to be 1em, with padding of 4px (top and bottom)
+    // fontSize is set to 1.25 rem internal to the buttons
+    const headerHeight = 2 * ((1.25 * fontSizeHeight) + 2 * 4);
+    // muiButtonSize appears to be 32 pixels... we set minHeight to 40
+    // to ensure that it's appropriately padded, but at the moment
+    // we let pagination grow to fill the space left when we can't fit a full row
+    const paginationHeight = 32 + 2 * 4;
+    const availableHeight = fixedHeight - headerHeight - paginationHeight;
+
+    // so I can't tell you why (need to understand border sharing better)
+    // but the nuances of how css shares borders, mean our 1 pixel border, becomes a 0.6667 border for each gap between rows!
+    // each row also has 2 * padding of 16 pixels (specified in pixels)
+    // ...and the content size is also relevant!
+    // we're going to add a mechanism to limit the row content to one line later
+    // TODO: 0.875 fontSizeHeight in MuiTable table-row - Shouldn't assume this.
+    const rowHeight = (0.875 * fontSizeHeight) + 2 * 16;
+    // FIXME: Actually the last cell's border ends up being half-this, 
+    // as it gets border: 0, but ... it's not clear how border collapsing is really working
+    // so my maths is slightly off and it's not clear how to incorporate it ... 
+    const borderHeight = (2.0/3.0);
+    // now ... 
+    // the easy way for us to calculate how many rows fit, is to pretend we have room for an additional border
+    // as for n-rows, we need room for n-1 borders... 
+    // our calculation of borders is off by literally a couple of pixels, so we fudge
+    const availableVirtualHeight = availableHeight + borderHeight - 2;
+    const rowsInAvailableHeight = Math.floor(availableVirtualHeight / (rowHeight + borderHeight));
+
+    const itemsPerPage = fontSizeHeight === 0 ? 5 : Math.max(5, rowsInAvailableHeight);
+    const estimatedRowHeight = rowHeight;
+    const estimatedTBodyHeight = (itemsPerPage * (rowHeight + borderHeight)) - borderHeight;
+    const estimatedTBodyHeightNoBorders = (itemsPerPage * rowHeight);
+    const estimatedTableHeight = estimatedTBodyHeight + headerHeight;
+    const estimatedBoxHeight = estimatedTableHeight + paginationHeight;
     const theme = useTheme();
 
     const pageCount = Math.ceil(memoizedData.length/itemsPerPage);
@@ -369,7 +437,6 @@ const TableUI = ({
     ) => {
       search && search(e.target.value);
     };
-
     const pageStart = page * itemsPerPage;
     const pageEnd = Math.min( (page + 1) * itemsPerPage, memoizedData.length);
 
@@ -390,134 +457,135 @@ const TableUI = ({
       []
     );
 
+
     return (
-      <React.Fragment>
-        <Box>
-          <Paper elevation={2} style={{ padding: "0 0 1rem 0",  overflowX: "scroll"}}>
-          <MuiTable>
-            {!isFetching && (
-              <TableHead>
-                {getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id} style={{backgroundColor: theme.palette.background.selected}}>
-                    {headerGroup.headers.map((header) => {
-                      return <TableCell key={header.id} className="text-sm font-cambon" style={{padding: "0rem 1rem 0 1rem"}}>
-                        <div style={{display: "flex"}}>
-                          <div style={{flexGrow: 1, alignContent: "center", paddingRight: "1rem"}}>
-                            {header.isPlaceholder
-                              ? null :
-                              flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )
-                            }
-                          </div>
+      <Box style={{height: fixedHeight, display: "flex", flexDirection: "column"}} ref={boxRef}>
+        {boxRef !== null && 
+          <Box>
+          <Paper elevation={2} style={{ padding: "0 0 0 0",  overflowX: "auto"}}>
+            <MuiTable style={{lineHeight: 1}}>
+              {!isFetching && (
+                <TableHead>
+                  {getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id} style={{backgroundColor: theme.palette.background.selected}}>
+                      {headerGroup.headers.map((header) => {
+                        return <TableCell key={header.id} className="text-sm font-cambon" style={{padding: "0rem 1rem 0 1rem"}}>
                           <div style={{display: "flex"}}>
-                          {(!header.isPlaceholder) &&
-                            <ButtonGroup variant="outlined" aria-label="Loading button group" orientation="vertical" style={{height: "100%"}}>
-                              <Button
-                                onClick={()=>onSelectMetric(header.column.columnDef.accessorKey)}
-                                disabled={header.column.columnDef.plottable ? undefined : true}
-                                style={{ borderRadius: 0, height: "50%", padding: 4}}
-                              >
-                                <AddchartIcon fontSize="small"/>
+                            <div style={{flexGrow: 1, alignContent: "center", paddingRight: "1rem"}}>
+                              {header.isPlaceholder
+                                ? null :
+                                flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )
+                              }
+                            </div>
+                            <div style={{display: "flex"}}>
+                            {(!header.isPlaceholder) &&
+                              <ButtonGroup variant="outlined" aria-label="Loading button group" orientation="vertical" style={{height: "100%"}}>
+                                <Button
+                                  onClick={()=>onSelectMetric(header.column.columnDef.accessorKey)}
+                                  disabled={header.column.columnDef.plottable ? undefined : true}
+                                  style={{ borderRadius: 0, padding: 4}}
+                                >
+                                  <AddchartIcon fontSize="small"/>
+                                </Button>
+                                <Button
+                                  disabled={header.column.columnDef.filterable? undefined: true}
+                                  onClick={()=>{
+                                    if(filtersByMetric[header.column.columnDef.accessorKey] === undefined)
+                                    {
+                                      setActiveFilterDialog(header.column.columnDef.accessorKey)
+                                    }
+                                    else
+                                    {
+                                      clearFiltersForMetric(header.column.columnDef.accessorKey)
+                                    }
+                                  }}
+                                  style={{ borderRadius: 0 , padding: 4}}
+                                >
+                                  {filtersByMetric[header.column.columnDef.accessorKey] === undefined ? 
+                                    <FilterAltIcon fontSize="small"/>
+                                    : <FilterAltOffIcon size="small"/>
+                                  }
                               </Button>
-                              <Button
-                                disabled={header.column.columnDef.filterable? undefined: true}
-                                onClick={()=>{
-                                  if(filtersByMetric[header.column.columnDef.accessorKey] === undefined)
-                                  {
-                                    setActiveFilterDialog(header.column.columnDef.accessorKey)
-                                  }
-                                  else
-                                  {
-                                    clearFiltersForMetric(header.column.columnDef.accessorKey)
-                                  }
-                                }}
-                                style={{ borderRadius: 0 , height: "50%", padding: 4}}
-                              >
-                                {filtersByMetric[header.column.columnDef.accessorKey] === undefined ? 
-                                  <FilterAltIcon fontSize="small"/>
-                                  : <FilterAltOffIcon size="small"/>
-                                }
-                            </Button>
-                            </ButtonGroup>
-                          }
+                              </ButtonGroup>
+                            }
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                    })}
-                  </TableRow>
-                ))}
-              </TableHead>
-            )}
-            <TableBody>
-              {!isFetching ? (
-                getRowModel()?.rows.slice(pageStart, pageEnd).map((row) => (
-                  <StyledTableRow key={row.id} onClick={handleRow}>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell
-                        onClick={() => onClickRow?.(cell, row)}
-                        key={cell.id}
-                        className="font-graphik"
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-
-                    ))}
-                  </StyledTableRow>
-                )
-                )
-              ) : (
-                <>
-                  {skeletons.map((skeleton) => (
-                    <TableRow key={skeleton}>
-                      {Array.from({ length: columnCount }, (x, i) => i).map(
-                        (elm) => (
-                          <TableCell key={elm}>
-                            <Skeleton height={skeletonHeight} />
-                          </TableCell>
-
-
-                        )
-                      )}
+                        </TableCell>
+                      })}
                     </TableRow>
                   ))}
-                </>
+                </TableHead>
               )}
-            </TableBody>
-          </MuiTable>
+              <TableBody>
+                {!isFetching ? (
+                  getRowModel()?.rows.slice(pageStart, pageEnd).map((row) => (
+                    <StyledTableRow key={row.id} onClick={handleRow}>
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell
+                          onClick={() => onClickRow?.(cell, row)}
+                          key={cell.id}
+                          className="font-graphik"
+                          style={{lineHeight: 1}}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
 
+                      ))}
+                    </StyledTableRow>
+                  )
+                  )
+                ) : (
+                  <>
+                    {skeletons.map((skeleton) => (
+                      <TableRow key={skeleton}>
+                        {Array.from({ length: columnCount }, (x, i) => i).map(
+                          (elm) => (
+                            <TableCell key={elm}>
+                              <Skeleton height={skeletonHeight} />
+                            </TableCell>
+                          )
+                        )}
+                      </TableRow>
+                    ))}
+                  </>
+                )}
+              </TableBody>
+            </MuiTable>
           </Paper>
         </Box>
-        {noDataFound && (
-          <Box my={2} textAlign="center">
-            {EmptyText}
-          </Box>
-        )}
-        {pageCount > 1 && page !== undefined && (
-         <StyledPagination
-             count={pageCount}
-             page={page+1}
-             onChange={translatePageChange}
-             color="primary"
-             showFirstButton 
-             showLastButton
-             siblingCount={3}
-           />
-        )}
-        {activeFilterDialog && <FilterDialog
-          metricKey={activeFilterDialog}
-          images={images}
-          filteredImages={filteredImages}
-          handleClose={()=>setActiveFilterDialog(null)}
-          filtersForMetric={filtersByMetric[activeFilterDialog]}
-          onSetFiltersForMetric={onSetFiltersForMetric}
-        />
-        }
-      </React.Fragment>
+      }
+      {noDataFound && (
+        <Box my={2} textAlign="center">
+          {EmptyText}
+        </Box>
+      )}
+      {pageCount > 1 && page !== undefined && (
+       <StyledPagination
+           count={pageCount}
+           page={page+1}
+           onChange={translatePageChange}
+           color="primary"
+           showFirstButton 
+           showLastButton
+           siblingCount={3}
+         />
+      )}
+      {activeFilterDialog && <FilterDialog
+        metricKey={activeFilterDialog}
+        images={images}
+        filteredImages={filteredImages}
+        handleClose={()=>setActiveFilterDialog(null)}
+        filtersForMetric={filtersByMetric[activeFilterDialog]}
+        onSetFiltersForMetric={onSetFiltersForMetric}
+      />
+      }
+      </Box>
     );
   };
 

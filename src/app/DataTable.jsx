@@ -138,14 +138,12 @@ const makeColumns = (onSelectImageIndex, repImage) =>
 
 // For pagination, define maximum of data per page
 
-const ITEMS_PER_PAGE = 6;
-
-const StaffTable = ({images, filteredImages, filtersByMetric, onSelectMetric, onSetFiltersForMetric, onSelectImageIndex}) => {
+const StaffTable = ({images, filteredImages, fixedHeight, filtersByMetric, onSelectMetric, onSetFiltersForMetric, onSelectImageIndex}) => {
 
   // Initiate your states
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(0);
-    const [filteredItems, setFilteredItems] = useState()
+    const [filteredItems, setFilteredItems] = useState();
 
     // handle the search here
 
@@ -183,28 +181,23 @@ const StaffTable = ({images, filteredImages, filtersByMetric, onSelectMetric, on
     const DataLength = images.length;
 
     return (
-        <section style={{marginTop: "0.5rem"}}>
-            <Box>
-                <TableUI
-                    columns={Columns}
-                    searchLabel="Search by Name or job title"
-                    EmptyText="No images in filter"
-                    itemsPerPage={ITEMS_PER_PAGE}
-                    handlePageChange={handlePageChange}
-                    page={currentPage}
-                    search={handleSearch}
+        <TableUI
+            columns={Columns}
+            searchLabel="Search by Name or job title"
+            EmptyText="No images in filter"
+            handlePageChange={handlePageChange}
+            page={currentPage}
+            search={handleSearch}
+            fixedHeight={fixedHeight}
+            images={images}
+            filteredImages={filteredImages}
+            filtersByMetric={filtersByMetric}
 
-                    images={images}
-                    filteredImages={filteredImages}
-                    filtersByMetric={filtersByMetric}
+            onSelectMetric={onSelectMetric}
+            onSetFiltersForMetric={onSetFiltersForMetric}
 
-                    onSelectMetric={onSelectMetric}
-                    onSetFiltersForMetric={onSetFiltersForMetric}
-
-                    onSelectImageIndex={onSelectImageIndex}
-                />
-            </Box>
-        </section>
+            onSelectImageIndex={onSelectImageIndex}
+        />
     );
 };
 
