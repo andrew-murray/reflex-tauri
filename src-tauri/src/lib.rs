@@ -17,7 +17,7 @@ use std::sync::Mutex;
 use sysinfo::Disks;
 use tauri::ipc::Response;
 use tauri::menu::{MenuBuilder, SubmenuBuilder};
-use tauri::Manager;
+use tauri::{AppHandle, Manager};
 use tauri::Emitter;
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tauri_plugin_fs::FsExt;
@@ -155,23 +155,8 @@ impl Clone for LightroomConfDirs {
     }
 }
 
-fn find_configuration() -> Option<LightroomConfDirs> {
-    let app_data_result = env::var("APPDATA");
-    if !app_data_result.is_ok() {
-        println!("{}", "unimp 1");
-        return None;
-    }
-
-    let app_data_dir = app_data_result.unwrap();
-    let preferences_relpath =
-        "Adobe/Lightroom/Preferences/Lightroom Classic CC 7 Preferences.agprefs";
-    let expected_adobe_prefs = app_data_dir + "/" + preferences_relpath;
-    let cat_path = get_library_path_from_config_file(&expected_adobe_prefs);
-    if !cat_path.is_ok() {
-        println!("library_path was not defined");
-        return None;
-    }
-    let cat_path_value = cat_path.unwrap();
+fn find_configuration_relative_to_catalog(cat_path_value: &String) -> Option<LightroomConfDirs>
+{
     println!("library_path = {}", cat_path_value);
     let cat_parent = Path::new(&cat_path_value).parent();
     if cat_parent.is_none() {
@@ -237,11 +222,31 @@ fn find_configuration() -> Option<LightroomConfDirs> {
 
     return Some(LightroomConfDirs {
         root: cat_directory.to_str().unwrap().to_owned(),
-        cat_path: cat_path_value,
+        cat_path: cat_path_value.clone(),
         metadata_db_path: metadata_db_path.unwrap(),
         preview_db_path: preview_db_path_value,
         preview_root: preview_root,
     });
+}
+
+fn find_configuration() -> Option<LightroomConfDirs> {
+    let app_data_result = env::var("APPDATA");
+    if !app_data_result.is_ok() {
+        println!("{}", "unimp 1");
+        return None;
+    }
+
+    let app_data_dir = app_data_result.unwrap();
+    let preferences_relpath =
+        "Adobe/Lightroom/Preferences/Lightroom Classic CC 7 Preferences.agprefs";
+    let expected_adobe_prefs = app_data_dir + "/" + preferences_relpath;
+    let cat_path = get_library_path_from_config_file(&expected_adobe_prefs);
+    if !cat_path.is_ok() {
+        println!("library_path was not defined");
+        return None;
+    }
+    let cat_path_value = cat_path.unwrap();
+    return find_configuration_relative_to_catalog(&cat_path_value);
 }
 
 fn format_preview_filepath(preview_root: &str, image: &PreviewData) -> String {
@@ -491,9 +496,7 @@ fn update_app_state_for_folder(app: &tauri::AppHandle, folder: &String)
             image_db_from_files: Vec::new(),
             image_db_to_index: HashMap::new()
         };
-    }
-    else
-    {
+    } else {
         let image_db = image_index.unwrap();
         // there's probably a far-more-efficient way of doing this
         let image_db_key_to_index = image_db
@@ -505,7 +508,7 @@ fn update_app_state_for_folder(app: &tauri::AppHandle, folder: &String)
         {
             println!("{}", entry);
         }
-        let image_db_values : Vec<ImageMetadataFields> = image_db
+        let image_db_values: Vec<ImageMetadataFields> = image_db
             .values()
             .map(maybe_image_data)
             .collect();
@@ -529,32 +532,71 @@ fn update_app_state_for_folder(app: &tauri::AppHandle, folder: &String)
     }
 }
 
-fn initialise_app_state(app: &mut tauri::App)
+fn update_app_state_for_config(app: &AppHandle, conf_dirs: &LightroomConfDirs)
+{
+    // TODO: BLOCKING IS BAD
+    // block_on(do_sql(&preview_db_path.unwrap()));
+    let image_id_to_image = block_on(do_sql(&conf_dirs.preview_db_path));
+    let app_state = app.state::<Mutex<AppState>>();
+    let mut mutable_app_state = app_state.lock().unwrap();
+    *mutable_app_state =  AppState {
+        shared: SharedAppState {
+            conf_dirs: Some(conf_dirs.clone()),
+            root_dir: None,
+            total_images: None
+        },
+        image_id_to_image: Some(image_id_to_image),
+        image_db_from_files: Vec::new(),
+        image_db_to_index: HashMap::new()
+    };
+}
+
+fn initialise_app_state_for_config(app: &AppHandle, conf_dirs: &LightroomConfDirs)
+{
+    // TODO: BLOCKING IS BAD
+    // block_on(do_sql(&preview_db_path.unwrap()));
+    let image_id_to_image = block_on(do_sql(&conf_dirs.preview_db_path));
+    let app_state = AppState {
+        shared: SharedAppState {
+            conf_dirs: Some(conf_dirs.clone()),
+            root_dir: None,
+            total_images: None
+        },
+        image_id_to_image: Some(image_id_to_image),
+        image_db_from_files: Vec::new(),
+        image_db_to_index: HashMap::new()
+    };
+    app.manage(Mutex::new(app_state));
+}
+
+fn reset_app_state_for_config(app: &AppHandle, conf_dirs: &LightroomConfDirs)
+{
+    // TODO: BLOCKING IS BAD
+    // block_on(do_sql(&preview_db_path.unwrap()));
+    let image_id_to_image = block_on(do_sql(&conf_dirs.preview_db_path));
+    let app_state = AppState {
+        shared: SharedAppState {
+            conf_dirs: Some(conf_dirs.clone()),
+            root_dir: None,
+            total_images: None
+        },
+        image_id_to_image: Some(image_id_to_image),
+        image_db_from_files: Vec::new(),
+        image_db_to_index: HashMap::new()
+    };
+    app.manage(Mutex::new(app_state));
+}
+
+fn initialise_app_state(app: &AppHandle)
 {
     let conf_dirs_maybe = find_configuration();
     if conf_dirs_maybe.is_some()
     {
         let conf_dirs = conf_dirs_maybe.unwrap();
-        // TODO: BLOCKING IS BAD
-        // block_on(do_sql(&preview_db_path.unwrap()));
-        let image_id_to_image = block_on(do_sql(&conf_dirs.preview_db_path));
-        let app_state = AppState {
-            shared: SharedAppState {
-                conf_dirs: Some(conf_dirs),
-                root_dir: None,
-                total_images: None
-            },
-            image_id_to_image: Some(image_id_to_image),
-            image_db_from_files: Vec::new(),
-            image_db_to_index: HashMap::new()
-        };
-        app.manage(Mutex::new(app_state));
+        initialise_app_state_for_config(app, &conf_dirs);
     }
-    else {
-        /* maybe re-enable this, if my dev-cycle is slow
-        let target = r"C:\projects\ambio\content\images\2025\bcn\20250115 Barcelona Gothic Barceloneta".to_string();
-        update_app_state_for_folder(app, target);
-        */
+    else
+    {
         let app_state = AppState {
             shared: SharedAppState {
                 conf_dirs: None,
@@ -577,7 +619,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_system_info::init())
         .setup(|app| {
-            initialise_app_state(app);
+            initialise_app_state(app.handle());
 
             // allowed the given directory
             // allow_all_ascii_drives(app);
@@ -620,8 +662,24 @@ pub fn run() {
                         if file_path.is_none() {
                             println!("{}", "file_path was not selected");
                         } else {
-                            println!("file_path: {}", file_path.unwrap());
+                            let file_path_val = file_path.unwrap().to_string();
+                            let conf_dirs = find_configuration_relative_to_catalog(&file_path_val);
+                            if conf_dirs.is_some()
+                            {
+                                let conf_val = conf_dirs.unwrap();
+                                update_app_state_for_config(app, &conf_val);
+                                let _ = app.emit("shared-app-state-set", {});
+                            }
+                            else
+                            {
+                                let _ans = app
+                                    .dialog()
+                                    .message("Failed to find necessary catalog components, try another catalog.")
+                                    .kind(MessageDialogKind::Error)
+                                    .blocking_show();
+                            }
                         }
+
                     }
                     // "settings" => {
                     //     println!("expected but unimplemented event with id {:?}", event.id());
