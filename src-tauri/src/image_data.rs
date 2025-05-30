@@ -33,7 +33,7 @@ pub struct ImageMetadataFields
     pub datetime_original: Option<String>,
     pub model: Option<String>,
     pub lens_model: Option<String>,
-    pub shutter_speed_value: Option<f64>,
+    pub shutter_speed_value: Option<(u32,u32)>,
     pub aperture_value: Option<f64>,
     pub focal_length: Option<f64>,
     pub iso_speed_rating: Option<u16>,

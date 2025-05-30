@@ -103,6 +103,27 @@ const makeDefaultColumnForEnum = (def, toString) => {
 }
 
 
+const makeRationalColumn = (def) => {
+    // This is more of a shutterSpeed column
+    // it might not generalise back to "rational" very 
+    return Object.assign(
+        {},
+        {
+            cell: ({ cell, row }) => {
+                const val = row.original[def.accessorKey];
+                let valS = "";
+
+                if (val !== undefined && val !== null && val.length === 2)
+                {
+                    const valf = val[0]/val[1];
+                    valS = valf < 0.2 ? `${val[0]}/${val[1]}` : valf.toPrecision(2);
+                }
+                return <span style={{minWidth:"5vw", maxHeight: "inherit", textWrap: "nowrap"}}>{valS}</span>;
+            }
+        },
+        def
+    );
+}
 
 const makeDefaultColumn = (def) => {
     return Object.assign(
@@ -129,6 +150,10 @@ const makeColumns = (onSelectImageIndex, repImage) =>
         else if(k === "filename")
         {
             defs[i] = makeFilenameColumn( defs[i], onSelectImageIndex );
+        }
+        else if(k === "shutter_speed_value")
+        {
+            defs[i] = makeRationalColumn( defs[i] );
         }
         else if(k in formatters)
         {

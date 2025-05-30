@@ -244,13 +244,35 @@ pub fn make_image_data_from_exif(folder: Option<String>, filename: String, exif_
     let exposure_program = get_u16_from_tags(exif_fields, ExifTag::ExposureProgram);
     let metering_mode = get_u16_from_tags(exif_fields, ExifTag::MeteringMode);
     let flash = get_u16_from_tags(exif_fields, ExifTag::Flash);
+    let mut shutter = None;
+    if shutter_speed_value.is_some()
+    {
+        let entry_maybe = exif_fields.iter().find(|x| x.tag == ExifTag::ExposureTime);
+        if entry_maybe.is_some()
+        {
+            let entry_val = entry_maybe.unwrap();
+            let mut num = None;
+            let mut den = None;
+            match &(entry_val.value) {
+                TagValue::URational(vec) => {
+                    num = Some(vec.get(0).clone().unwrap().numerator);
+                    den = Some(vec.get(0).clone().unwrap().denominator);
+                },
+                _ => ()
+             };
+            if num.is_some() && den.is_some()
+            {
+                shutter = Some( (num.unwrap(), den.unwrap()) );
+            }
+        }
+    }
     return image_data::ImageMetadataFields {
         folder,
         filename,
         datetime_original,
         model,
         lens_model,
-        shutter_speed_value,
+        shutter_speed_value: shutter,
         aperture_value,
         focal_length,
         iso_speed_rating,

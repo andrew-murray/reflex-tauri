@@ -30,6 +30,15 @@ export const titles = {
 };
 
 export const formatters = {
+  "shutter_speed_value": (val) => {
+    let valS = "";
+    if (val !== undefined && val !== null && val.length === 2)
+    {
+        const valf = val[0]/val[1];
+        valS = valf < 0.2 ? `${val[0]}/${val[1]}` : valf.toPrecision(2);
+    }
+    return valS;
+  }
 };
 
 export const exif_parsers = {
@@ -89,11 +98,11 @@ export const parsers = {
       {
         const num = s.substring(0, slIndex);
         const denom = s.substring(slIndex + 1, wsIndex);
-        return parseFloat(num) / parseFloat(denom);
+        return [parseInt(num), parseInt(denom)];
       }
       else
       {
-        return parseFloat(s.substring(0, wsIndex));
+        return null;
       }
     }
     else
@@ -139,6 +148,13 @@ export const parsers = {
     {
       return parseInt(s.substring(0, wsIndex));
     }
+  },
+  "shutter_speed_value": (s) => {
+    if (s !== undefined && s !== null && s.length === 2)
+    {
+      return s[0] / s[1];
+    }
+    return null;
   }
 };
 

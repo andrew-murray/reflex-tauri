@@ -131,8 +131,8 @@ export function NumericFilterDialog({images, filteredImages, metricKey, filtersF
     setValues(newValues);
   };
 
-  const dataMin = formattedData.length === 0 ? 0 : Math.min(...formattedData.map(d => d.name));
-  const dataMax = formattedData.length === 0 ? 1 :Math.max(...formattedData.map(d => d.name));
+  const dataMin = formattedData.length === 0 ? 0 : Math.min(...formattedData.map(d => d.value));
+  const dataMax = formattedData.length === 0 ? 1 :Math.max(...formattedData.map(d => d.value));
   // even if our data exhibits a narrower range than our current filters, retain the current filters
   const filterMin = filtersForMetric !== undefined ? filtersForMetric.range[0] : dataMin;
   const filterMax = filtersForMetric !== undefined ? filtersForMetric.range[1] : dataMax;

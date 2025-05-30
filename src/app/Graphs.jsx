@@ -23,6 +23,8 @@ const ScoreColorPalette = [
 export function GetFormattedData(data, dataKey)
 {
   let valueCounts = new Map();
+  const defaultFormatter = (s) => s;
+  const formatterForField = formatters[dataKey] || defaultFormatter;
   for(const d of data)
   {
     // TODO: Drop null? Is this the right place?
@@ -30,7 +32,10 @@ export function GetFormattedData(data, dataKey)
     {
       continue;
     }
-    valueCounts.set(d[dataKey], (valueCounts.get(d[dataKey]) || 0) + 1);
+    let key = formatterForField(d[dataKey]);
+    let existingEntry = valueCounts.get(key);
+    let count = existingEntry === undefined ? 1 : existingEntry.count + 1;
+    valueCounts.set(key, {value: d[dataKey], count});
   }
   const defaultParser = (s) => {
     return s;
@@ -40,22 +45,26 @@ export function GetFormattedData(data, dataKey)
     // ERROR!! Somehow?
   }
   const parserForField = parsers[dataKey] || defaultParser;
+  console.log({formatters});
+  // we don't do this yet because numeric filters don't
+  // support backwards ranges
+  const invSort = false; // dataKey === "shutter_speed_value";
   if (dataKey in formatters)
   {
     // assume the field is natively numeric, and we want to change the labels
     // TODO: a null value, gets sorted ... where? How are we really handling null?
     const formatter = formatters[dataKey];
     const formattedData = [...valueCounts.entries()].map( (kv, index) => { 
-      return {"name": formatter(kv[0]), "value": kv[0], "count": kv[1],"fill": ColorPalette[ index % ColorPalette.length]};
-    }).toSorted( (a,b) => a.value - b.value );
+      return {"name": kv[0], "value": parserForField(kv[1].value), "count": kv[1].count,"fill": ColorPalette[ index % ColorPalette.length]};
+    }).toSorted( (a,b) => invSort ? b.value - a.value : a.value - b.value );
     return formattedData;
   }
   else
   {
     // TODO: a null value, gets sorted ... where? How are we really handling null?
     const formattedData = [...valueCounts.entries()].map( (kv, index) => { 
-      return {"name": kv[0], "value": parserForField(kv[0]), "count": kv[1],"fill": ColorPalette[ index % ColorPalette.length]};
-    }).toSorted( (a,b) => a.value - b.value );
+      return {"name": kv[0], "value": parserForField(kv[1].value), "count": kv[1].count,"fill": ColorPalette[ index % ColorPalette.length]};
+    }).toSorted( (a,b) => invSort ? b.value - a.value : a.value - b.value  );
     return formattedData;
   }
 }

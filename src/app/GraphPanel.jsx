@@ -2,7 +2,7 @@ import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
 import React from 'react'
 import * as Graphs from "./Graphs"
-import {fields, titles, parsers} from "./CameraData";
+import {formatters, fields, titles, parsers} from "./CameraData";
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
@@ -63,9 +63,9 @@ function GraphSettingsPanel({logSelected, onSetLogMode, freqSelected, onSetFreqM
 
 export default function GraphPanel({images, logSelected, onSetLogMode, freqSelected, onSetFreqMode, ratingMode, onSetRatingMode}) {
     // graphs are going to be [shutter, aperture, ISO] naturally
-    const shutter = "shutter_speed_value"; // fields.shutter;
-    const aperture = "aperture_value"; // fields.aperture;
-    const iso = "iso_speed_rating"; // fields.iso;
+    const shutter = "shutter_speed_value";
+    const aperture = "aperture_value";
+    const iso = "iso_speed_rating";
 
     // Note: metadata may not be present!
     // TODO: Exclude bad data?
@@ -117,6 +117,7 @@ export default function GraphPanel({images, logSelected, onSetLogMode, freqSelec
             {
                 const inputFieldDict = groupedData[field];
                 const parserForField = parsers[field] || defaultParser;
+                const formatterForField = formatters[field] || defaultParser;
                 let outputFieldValues = []
                 for (const [k , v] of Object.entries(inputFieldDict))
                 {
@@ -134,7 +135,7 @@ export default function GraphPanel({images, logSelected, onSetLogMode, freqSelec
                     );
 
                     outputFieldValues.push({
-                        name: v.name,
+                        name: formatterForField(v.name),
                         value: parserForField(v.name),
                         count: v.count,
                         ratingCounts: v.ratingCounts,
