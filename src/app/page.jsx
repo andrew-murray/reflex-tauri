@@ -659,9 +659,16 @@ export default function Home() {
                 {
                   if (metric === "shutter_speed_value")
                   {
-                    const val = image[metric][0]/image[metric][1];
-                    console.log({val, row: image[metric], metric, filter})
-                    passMetricFilters &= filter.range[0] <= val && val <= filter.range[1];
+                    const rawV = image[metric];
+                    if (rawV !== undefined && rawV !== null && rawV.length === 2)
+                    {
+                      const val = rawV[0]/rawV[1];
+                      passMetricFilters &= filter.range[0] <= val && val <= filter.range[1];
+                    }
+                    else
+                    {
+                      passMetricFilters = false;
+                    }
                   }
                   else
                   {
