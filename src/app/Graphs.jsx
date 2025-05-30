@@ -45,7 +45,6 @@ export function GetFormattedData(data, dataKey)
     // ERROR!! Somehow?
   }
   const parserForField = parsers[dataKey] || defaultParser;
-  console.log({formatters});
   // we don't do this yet because numeric filters don't
   // support backwards ranges
   const invSort = false; // dataKey === "shutter_speed_value";
