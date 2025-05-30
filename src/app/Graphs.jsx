@@ -164,6 +164,17 @@ export function BarGraph({data, dataKey, color, logMode, freqMode, ratingMode})
     // the formatter trims our string so this padStart doesn't work!
     return value.toFixed(0) + "%"; // .padStart(6, ' ');
   };
+  /*
+    // Investigating logarithmic X, I found
+    // these components useful
+    // 
+    <BarChart
+      data={data.filter(group => group.value !== null)}
+
+    />
+      <XAxis dataKey="value" type="number" scale="log" domain={['dataMin', 'dataMax']}>
+
+  */
   return <ResponsiveContainer width="100%" height="100%">
     <BarChart
       data={data}
