@@ -244,6 +244,8 @@ pub fn make_image_data_from_exif(folder: Option<String>, filename: String, exif_
     let exposure_program = get_u16_from_tags(exif_fields, ExifTag::ExposureProgram);
     let metering_mode = get_u16_from_tags(exif_fields, ExifTag::MeteringMode);
     let flash = get_u16_from_tags(exif_fields, ExifTag::Flash);
+    // TODO: This is a bit silly, we've already gotten a value
+    // but we're going to go back and regenerate it
     let mut shutter = None;
     if shutter_speed_value.is_some()
     {
