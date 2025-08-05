@@ -327,7 +327,6 @@ function useClientRectAndWatchResize() {
   React.useEffect(() => {
     if (!ref.current) return;
     const resizeObserver = new ResizeObserver(() => {
-      console.log({boxRef, boxRect, paginationRect, paginationRef});
       ref(ref.current);
     });
     resizeObserver.observe(ref.current);
@@ -457,7 +456,6 @@ const TableUI = ({
       []
     );
 
-
     return (
       <Box style={{height: fixedHeight, display: "flex", flexDirection: "column"}} ref={boxRef}>
         {boxRef !== null && 
@@ -469,6 +467,9 @@ const TableUI = ({
                   {getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id} style={{backgroundColor: theme.palette.background.selected}}>
                       {headerGroup.headers.map((header) => {
+                        const filterActive = filtersByMetric[header.column.columnDef.accessorKey] !== undefined;
+                        const filterButtonStyles = filterActive ? {borderRadius: 0 , padding: 4, backgroundColor: theme.palette.primary.main}
+                          : {borderRadius: 0 , padding: 4};
                         return <TableCell key={header.id} className="text-sm font-cambon" style={{padding: "0rem 1rem 0 1rem"}}>
                           <div style={{display: "flex"}}>
                             <div style={{flexGrow: 1, alignContent: "center", paddingRight: "1rem"}}>
@@ -502,11 +503,11 @@ const TableUI = ({
                                       clearFiltersForMetric(header.column.columnDef.accessorKey)
                                     }
                                   }}
-                                  style={{ borderRadius: 0 , padding: 4}}
+                                  style={filterButtonStyles}
                                 >
-                                  {filtersByMetric[header.column.columnDef.accessorKey] === undefined ? 
+                                  { !filterActive ? 
                                     <FilterAltIcon fontSize="small"/>
-                                    : <FilterAltOffIcon size="small"/>
+                                    : <FilterAltOffIcon size="small" style={{color: theme.palette.action.active}}/>
                                   }
                               </Button>
                               </ButtonGroup>
