@@ -87,9 +87,44 @@ export const exif_parsers = {
   }
 };
 
+// many lightroom attributes now arrive as a strange structured json string
+// (stored in the db column)
+// 
+
+const parseDict = (s, withoutTypographic) => {
+  // e.g. "shutterSpeedValue = {
+  //  withTypographic = "1/40 sec",
+  //  withoutTypographic = "1/40 sec",
+  // }"
+  // we don't bother writing/importing a fully fleshed out parser for this
+  // instead, we find the line we're after
+  const seekWithoutTypographic = withoutTypographic || false;
+  const trimmedLines = s.split("\n").map(l => l.trim());
+  // this is a little inflexible - with pros/cons
+  const soughtPrefix = seekWithoutTypographic ? "withoutTypographic = \"" : "withTypographic = \"";
+  const matchingLines = trimmedLines.filter(l => l.startsWith(soughtPrefix));
+  if (matchingLines.length !== 1)
+  {
+    return null;
+  }
+  const soughtLine = matchingLines[0];
+  const lastStringDelimiterIndex = soughtLine.lastIndexOf('"');
+  if (lastStringDelimiterIndex === -1 || lastStringDelimiterIndex <= soughtPrefix.length)
+  {
+    return null;
+  }
+  const soughtValue = soughtLine.substring(soughtPrefix.length, lastStringDelimiterIndex);
+  return soughtValue;
+};
+
 export const parsers = {
-  [adobe_shutter]: (s) => {
+  [adobe_shutter]: (dict) => {
     // e.g. 1/30 sec
+    const s = parseDict(dict);
+    if (s === null)
+    {
+      return null;
+    }
     const wsIndex = s.indexOf(' ');
     if (!(wsIndex === 0 || wsIndex === -1))
     {
@@ -111,7 +146,12 @@ export const parsers = {
       return null;
     }
   },
-  [adobe_aperture]: (s) => {
+  [adobe_aperture]: (dict) => {
+    const s = parseDict(dict);
+    if (s === null)
+    {
+      return null;
+    }
     // e.g. "ƒ / 4.0"
     // lightroom uses some weird special "f" here!
     if (s.substring(0,4) === "ƒ / ")
@@ -136,8 +176,13 @@ export const parsers = {
       return null;
     }
   },
-  [adobe_focalLength]: (s) => {
+  [adobe_focalLength]: (dict) => {
     // e.g. "40 mm"
+    const s = parseDict(dict);
+    if (s === null)
+    {
+      return null;
+    }
     const wsIndex = s.indexOf(' ');
     if (wsIndex === -1)
     {
