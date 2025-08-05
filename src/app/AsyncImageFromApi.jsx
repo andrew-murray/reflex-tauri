@@ -51,7 +51,7 @@ export default function AsyncImageFromApi({image, imageStyle, orientation, width
         catch(error)
         {
           console.log({error});
-          imageSrc = "/plzno-freepik.jpg";
+          imageSrc = "/LoadingError.jpg";
           loadingError = true;
         }
         // todo: it's a better pattern to abort the request according to react sources
