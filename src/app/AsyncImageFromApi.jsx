@@ -25,10 +25,11 @@ const getImageTypeFromImage = (image) => {
 
 export default function AsyncImageFromApi({image, imageStyle, orientation, width, height})
 {
-  const [imgState, setImageState] = React.useState(null);
+  const [imageState, setImageState] = React.useState(null);
   React.useEffect(
     () => {
       let mounted = true;
+      let loadingError = false;
       const awaitable = async () => {
         let imageSrc = null;
         try
@@ -51,12 +52,13 @@ export default function AsyncImageFromApi({image, imageStyle, orientation, width
         {
           console.log({error});
           imageSrc = "/plzno-freepik.jpg";
+          loadingError = true;
         }
         // todo: it's a better pattern to abort the request according to react sources
         // though ... this seems to catch more cases we care about
         if (mounted)
         {
-          setImageState(imageSrc);
+          setImageState({image: imageSrc, error: loadingError});
         }
       };
       awaitable();
@@ -70,17 +72,21 @@ export default function AsyncImageFromApi({image, imageStyle, orientation, width
     "AB": undefined,
     "BC": "rotate90"
   };
-  const oClass = oClassMap[orientation];
-  const rotatedWidth = oClass !== undefined ? height: width;
-  const rotatedHeight = oClass !== undefined ? width: height;
+  // if we've had a loading error and are displaying the freepic image
+  // force portrait orientation (similarly if we haven't loaded an image yet)
+  const usingDefaultImage = (imageState === null || imageState.error === true);
+  const oClass = usingDefaultImage ?  undefined : oClassMap[orientation];
+  // this is a little awkward, could we read the dimensions from the image instead?
+  const rotatedWidth = usingDefaultImage ?  2000 : (oClass !== undefined ? height: width);
+  const rotatedHeight = usingDefaultImage ? 2000 : (oClass !== undefined ? width: height);
 
   return <React.Fragment>
-    {imgState === null && <Skeleton variant="rectangular"
+    {imageState === null && <Skeleton variant="rectangular"
       width={rotatedWidth} 
       height={rotatedHeight} 
     /> }
-    {imgState != null && <img
-      src={imgState}
+    {imageState != null && <img
+      src={imageState.image}
       className={oClass}
       style={Object.assign(
         {},
