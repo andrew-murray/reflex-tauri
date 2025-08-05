@@ -26,9 +26,9 @@ function GraphSettingsPanel({logSelected, onSetLogMode, freqSelected, onSetFreqM
             <ToggleButton
               selected={logSelected}
               onChange={() => onSetLogMode((prevSelected) => !prevSelected)}
-              style={{width: "100%"}}
+              style={{width: "100%", textTransform: "none"}}
             >
-                logarithmic
+                y=ln(y)
             </ToggleButton>
         </ListItem>
         <ListItem key="rating-mode" disablePadding>
