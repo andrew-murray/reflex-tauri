@@ -5,7 +5,7 @@
 # Contents
 
 - [Overview](#overview)
-- [Features](#features)
+- [Screenshots](#screenshots)
 
 ## Overview
 
