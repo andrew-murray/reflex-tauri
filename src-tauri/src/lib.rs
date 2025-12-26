@@ -480,7 +480,8 @@ fn maybe_image_data(tup: &(image_folder::ImagePaths, Option<image_folder::ImageD
 
 fn update_app_state_for_folder(app: &tauri::AppHandle, folder: &String)
 {
-    let image_index = image_folder::index_folder(folder, folder);
+    // let image_index = image_folder::index_folder(folder, folder);
+    let image_index = image_folder::index_folder_faster(folder, folder);
     if image_index.is_err()
     {
         let app_state = app.state::<Mutex<AppState>>();

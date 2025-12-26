@@ -35,4 +35,6 @@ anyhow = "1.0.97"
 thiserror = "2.0.12"
 rawloader = "0.37.1"
 rexif = "0.7.5"
+xmp_toolkit = "=1.11.0"
+rayon = "1.11.0"
 

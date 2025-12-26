@@ -40,6 +40,7 @@ pub struct ImageMetadataFields
     pub exposure_program: Option<u16>,
     pub metering_mode: Option<u16>,
     pub flash: Option<u16>,
+    pub embedded_rating: Option<i16>
 }
 
 /*

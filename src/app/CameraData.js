@@ -213,7 +213,7 @@ export const makeImageFromExif = (record) => {
       exposure_program: exif_parsers["exposure_program"](record["exposure_program"]),
       metering_mode: exif_parsers["metering_mode"](record["metering_mode"]),
       // we don't include rating, so that the graph knows to drop this column
-      // rating: null,
+      rating: record["embedded_rating"],
       exif: record,
       adobe: null
     }
