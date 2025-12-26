@@ -3,7 +3,9 @@ use std::fs;
 use anyhow;
 use rexif::*;
 use std::collections::HashMap;
+use xmp_toolkit::{IterOptions, OpenFileOptions, XmpFile};
 use crate::image_data;
+use rayon::prelude::*;
 
 #[derive(Clone)]
 enum DataVariant {
@@ -67,6 +69,13 @@ pub fn get_string_from_tags(exif_data: &Vec<ExifEntry>, tag: ExifTag) -> Option<
     };
     return res;
 }
+
+
+// this function only handles exactly the right type
+// TODO: I'd like the get_X_from_tags to be generic, but I don't quite have the rust
+// chops to map between Tag::Value::U8 and a real type
+// and "name" those in the function
+
 pub fn get_u8_from_tags(exif_data: &Vec<ExifEntry>, tag: ExifTag) -> Option<u8>
 {
     let entry_maybe = exif_data.iter().find(|x| x.tag == tag);
@@ -131,9 +140,9 @@ fn read_file_with_rexif(folder: &String, filename: &String) -> (ImagePaths, Opti
     if parse_result.is_ok()
     {
         let exif_data = parse_result.unwrap().entries;
-        for entry in exif_data.iter() {
-            println!("{:?}", entry);
-        }
+        // for entry in exif_data.iter() {
+        //     println!("{:?}", entry);
+        // }
         let mut data_map = HashMap::new();
         for t in TAGS {
             let entry_maybe = exif_data.iter().find(|x| x.tag == t);
@@ -177,6 +186,72 @@ fn read_file_with_rexif(folder: &String, filename: &String) -> (ImagePaths, Opti
         eprintln!("Error in {}: {}", &filename, parse_result.unwrap_err());
         return (paths, None);
     }
+}
+
+pub fn gather_eligible_files(original_root_path: &String, root_path: &String) ->  anyhow::Result<Vec<String>>
+{
+    let mut eligible_filepaths = Vec::new();
+    for entry in fs::read_dir(&root_path)? {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_dir()
+        {
+            let conv_path = path.into_os_string().into_string();
+            if conv_path.is_err()
+            {
+                // todo: log, rather than end?
+                return Err(anyhow::Error::from(
+                    anyhow::anyhow!("Failed to convert os path to string")
+                ));
+            }
+            let sub_result =  gather_eligible_files(original_root_path, conv_path.as_ref().unwrap());
+            if sub_result.is_ok()
+            {
+                eligible_filepaths.extend(sub_result.unwrap());
+            }
+            else
+            {
+                // todo: log, rather than end?
+                return Err(anyhow::Error::from(
+                    anyhow::anyhow!("Sub-operation failed")
+                ));
+            }
+        }
+        else if path.is_file() // && is_eligible? Some sort of image filter
+        {
+            let conv_path = path.into_os_string().into_string();
+            if conv_path.is_err()
+            {
+                // todo: log, rather than end?
+                return Err(anyhow::Error::from(
+                    anyhow::anyhow!("Failed to convert os path to string")
+                ));
+            }
+            let cpu = conv_path.unwrap();
+            eligible_filepaths.push(cpu);
+        }
+    }
+    return Ok(eligible_filepaths);
+}
+
+pub fn load_images_in_parallel(original_root_path: &String, filenames: &Vec<String>)  -> anyhow::Result<HashMap<String, (ImagePaths, Option<ImageData>)>>
+{
+    // todo: configure?
+    let file_reads = filenames.par_iter().map(|image_filename| {
+        let load_result = read_file_with_rexif(original_root_path, &image_filename);
+        return (image_filename.clone(), load_result);
+    }).collect::<HashMap<_,_>>();
+    return Ok(file_reads);
+}
+
+pub fn index_folder_faster(original_root_path: &String, root_path: &String) -> anyhow::Result<HashMap<String, (ImagePaths, Option<ImageData>)>>
+{
+    // here our implementation is in-serial, build the collection of files we want to import
+    // then load em, somewhat in parallel
+    // this isn't strictly a smart way to do things ... but it's super simple to write as a quick way
+    // to let your CPU speed this task up
+    let eligible_files = gather_eligible_files(original_root_path, root_path)?;
+    return load_images_in_parallel(original_root_path, &eligible_files)
 }
 
 pub fn index_folder(original_root_path: &String, root_path: &String) -> anyhow::Result<HashMap<String, (ImagePaths, Option<ImageData>)>>
@@ -231,6 +306,41 @@ pub fn index_folder(original_root_path: &String, root_path: &String) -> anyhow::
 
 pub fn make_image_data_from_exif(folder: Option<String>, filename: String, exif_fields: &Vec<ExifEntry>) -> image_data::ImageMetadataFields
 {
+    // let's also read xmp data in this function
+    let mut f = XmpFile::new();
+    let mut embedded_rating : Option<i16> = None;
+    if f.is_ok()
+    {
+        let mut usable_f = f.unwrap();
+        let fo_res =  usable_f.open_file(
+            filename.clone(),
+            OpenFileOptions::default().only_xmp()
+        );
+        if fo_res.is_err()
+        {
+            println!("Failed to open xmp for file {}", filename);
+        }
+        let xmp =  usable_f
+            .xmp()
+            .ok_or_else(|| anyhow::anyhow!("unable to process XMP in file {}", filename));
+        if xmp.is_ok()
+        {
+            //for entry in xmp.unwrap().iter(IterOptions::default()) {
+            //    println!("{} :: {} -> {}", entry.schema_ns, entry.name, entry.value.value)
+            //}
+            let xmp_map = xmp.unwrap();
+            let rating_property = xmp_map
+                .iter(IterOptions::default())
+                .find(|entry| entry.schema_ns == "http://ns.adobe.com/xap/1.0/" && entry.name == "xmp:Rating");
+            if rating_property.is_some()
+            {
+                embedded_rating = rating_property.unwrap().value.value.parse::<i16>().ok()
+            }
+    }
+    }
+
+
+
     let datetime_original = get_string_from_tags(exif_fields, ExifTag::DateTimeOriginal);
     let model = get_string_from_tags(exif_fields, ExifTag::Model);
     let lens_model = get_string_from_tags(exif_fields, ExifTag::LensModel);
@@ -280,6 +390,7 @@ pub fn make_image_data_from_exif(folder: Option<String>, filename: String, exif_
         iso_speed_rating,
         exposure_program,
         metering_mode,
-        flash
+        flash,
+        embedded_rating
     };
 }
