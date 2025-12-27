@@ -351,19 +351,6 @@ export default function Home() {
               console.log("received available_images response");
               console.log({response});
               setImages( response.map((x) => CameraData.makeImageFromExif(x)) );
-              /*
-              if( response.conf_dirs !== null)
-              {
-                setMetadataDBPath(response.conf_dirs.metadata_db_path);
-                setPreviewDBPath(response.conf_dirs.preview_db_path);
-              }
-              else
-              {
-                setMetadataDBPath(null);
-                setPreviewDBPath(null);
-              }
-              setRootFolderToSearch(response.root_dir);
-              */
             }
             setInProgress(false);
           }
@@ -808,9 +795,33 @@ export default function Home() {
   const availableHeight = windowSize[1] - 2 * spaceBetweenComponents; // top, middle, no-bottom
   const graphPanelHeight = Math.max(Math.floor(availableHeight * 0.4), 300);
   const tableHeight = Math.max(availableHeight - graphPanelHeight - 2, 300);
+
+  const alwaysMainStyle = {
+    textAlign: "center",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: spaceBetweenComponents,
+    paddingLeft: spaceBetweenComponents,
+    paddingRight: spaceBetweenComponents,
+    paddingBottom: 0,
+  };
+  // make sure that the progress spinner is displayed nicely, by ensuring the
+  // main is sized to the window, if we're only going to show a progress spinner in it
+  // (could be handled in other ways but this works!)
+  const mainStyle = !inProgress ? alwaysMainStyle
+    : Object.assign( 
+      {},
+      alwaysMainStyle,
+      {
+        width: windowSize[0], 
+        height: windowSize[1] 
+      }
+    );
+
   return (<React.Fragment>        
       <CssBaseline />
-      <Box sx={{ display: 'flex' }}>
+      <Box sx={{ display: 'flex'}}>
         {(images.length !== 0 && !inProgress) && 
           <NavDrawer 
             open={navOpen}
@@ -823,16 +834,7 @@ export default function Home() {
             handleDrawerOpen={handleDrawerOpen}
           />
         }
-        <MainMinusDrawer open={navOpen} style={{
-          textAlign: "center",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          paddingTop: spaceBetweenComponents,
-          paddingLeft: spaceBetweenComponents,
-          paddingRight: spaceBetweenComponents,
-          paddingBottom: 0
-          }}>
+        <MainMinusDrawer open={navOpen} style={mainStyle}>
           <div style={{width: "100%", margin: "auto", alignItems: "center", display: "flex", flexDirection: "column"}}>
           {(images.length !== 0 && !inProgress) &&
             <Box style={{width: "100%", height: graphPanelHeight}}>
