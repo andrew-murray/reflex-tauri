@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 /*
 use tauri_plugin_sql::{Migration, MigrationKind};
 

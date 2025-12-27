@@ -7,13 +7,13 @@ use serde::{Deserialize, Serialize, Serializer};
 use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::ConnectOptions;
 use std::collections::HashMap;
-use std::cmp;
 use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 use std::sync::Mutex;
+use futures::TryFutureExt;
 use sysinfo::Disks;
 use tauri::ipc::Response;
 use tauri::menu::{MenuBuilder, SubmenuBuilder};
@@ -478,13 +478,13 @@ fn maybe_image_data(tup: &(image_folder::ImagePaths, Option<image_folder::ImageD
     }
 }
 
-fn update_app_state_for_folder(app: &tauri::AppHandle, folder: &String)
+fn update_app_state_for_folder(app_state: tauri::State<'_, Mutex<AppState>>, folder: &String, _additive: bool)
 {
-    // let image_index = image_folder::index_folder(folder, folder);
-    let image_index = image_folder::index_folder_faster(folder, folder);
+    println!("Starting update_app_state_for_folder");
+    let image_index = image_folder::index_folder(folder, folder);
     if image_index.is_err()
     {
-        let app_state = app.state::<Mutex<AppState>>();
+        // todo: additive should affect this perhaps?
         let mut mutable_app_state = app_state.lock().unwrap();
         // MutexGuard<T> implements deref-able
         *mutable_app_state = AppState {
@@ -505,10 +505,6 @@ fn update_app_state_for_folder(app: &tauri::AppHandle, folder: &String)
             .enumerate()
             .map(|(i, k)| (k.clone(), i))
             .collect::<HashMap<String, usize>>();
-        for entry in image_db.keys()
-        {
-            println!("{}", entry);
-        }
         let image_db_values: Vec<ImageMetadataFields> = image_db
             .values()
             .map(maybe_image_data)
@@ -517,7 +513,6 @@ fn update_app_state_for_folder(app: &tauri::AppHandle, folder: &String)
         // {
         //     println!("{:?}", x);
         // }
-        let app_state = app.state::<Mutex<AppState>>();
         let mut mutable_app_state = app_state.lock().unwrap();
         // MutexGuard<T> implements deref-able
         *mutable_app_state = AppState {
@@ -531,14 +526,25 @@ fn update_app_state_for_folder(app: &tauri::AppHandle, folder: &String)
             image_db_to_index: image_db_key_to_index
         };
     }
+    println!("Ended update_app_state_for_folder");
 }
 
-fn update_app_state_for_config(app: &AppHandle, conf_dirs: &LightroomConfDirs)
+
+#[tauri::command]
+async fn update_app_state_for_folder_and_emit_state(app_handle: tauri::AppHandle, state: tauri::State<'_, Mutex<AppState>>, folder: String, additive: bool) -> CommandResult<tauri::ipc::Response>
+{
+    update_app_state_for_folder(state, &folder, additive);
+    println!("emitting event {}", "shared-app-state-set");
+    let _ = app_handle.emit("shared-app-state-set", {}).unwrap();
+    Ok(Response::new(Vec::new()))
+}
+
+
+fn update_app_state_for_config(app_state: &tauri::State<'_, Mutex<AppState>>, conf_dirs: &LightroomConfDirs, _additive: &bool)
 {
     // TODO: BLOCKING IS BAD
     // block_on(do_sql(&preview_db_path.unwrap()));
     let image_id_to_image = block_on(do_sql(&conf_dirs.preview_db_path));
-    let app_state = app.state::<Mutex<AppState>>();
     let mut mutable_app_state = app_state.lock().unwrap();
     *mutable_app_state =  AppState {
         shared: SharedAppState {
@@ -551,6 +557,29 @@ fn update_app_state_for_config(app: &AppHandle, conf_dirs: &LightroomConfDirs)
         image_db_to_index: HashMap::new()
     };
 }
+
+
+#[tauri::command]
+async fn update_app_state_for_cat_and_emit_state(app_handle: tauri::AppHandle, state: tauri::State<'_, Mutex<AppState>>, cat: String, additive: bool) -> CommandResult<tauri::ipc::Response>
+{
+    let conf_dirs = find_configuration_relative_to_catalog(&cat);
+    if conf_dirs.is_some()
+    {
+        let conf_val = conf_dirs.unwrap();
+        update_app_state_for_config(&state, &conf_val, &additive);
+        let _ = app_handle.emit("shared-app-state-set", {});
+        return Ok(Response::new(Vec::new()))
+    }
+    else
+    {
+        // emit error!
+        // let _ = app_handle.emit("shared-app-state-set", {}).unwrap();
+        return Err(ReflexCommandError::from(
+            anyhow::anyhow!("Failed to find the necessary components of the catalogue")
+        ));
+    }
+}
+
 
 fn initialise_app_state_for_config(app: &AppHandle, conf_dirs: &LightroomConfDirs)
 {
@@ -612,6 +641,16 @@ fn initialise_app_state(app: &AppHandle)
     }
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MenuEventArgs
+{
+    kind: String,
+    folder: Option<String>,
+    cat: Option<String>,
+    additive: bool
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -642,49 +681,40 @@ pub fn run() {
                 .items(&[&file_menu, &help_menu])
                 .build()?;
             app.set_menu(menu)?;
-
             app.on_menu_event(move |app: &tauri::AppHandle, event| {
                 println!("menu event: {:?}", event.id());
-
+                // these menu events are wired up very strangely
+                // we need to fire off async tasks, and ... I wanted to just use tauri to manage that
+                // and that combined with passing around the appHandle didn't seem to play nice
+                // so instead, we just hit the frontend with an event, and it invokes a command
+                // to go do the heavy lifting
                 match event.id().0.as_str() {
                     "open folder" => {
                         let folder_path = app.dialog().file().blocking_pick_folder();
-                        if folder_path.is_none() {
-                            println!("{}", "folder_path was not selected");
-                        } else {
-                            let fpath = folder_path.unwrap().to_string();
-                            update_app_state_for_folder(app, &fpath);
-                            println!("emitting event {}", "shared-app-state-set");
-                            let _ = app.emit("shared-app-state-set", {});
+                        if folder_path.is_some()
+                        {
+                            let folder = folder_path.unwrap();
+                            println!("emitting-menu-event");
+                            app.emit("menu-event", MenuEventArgs{
+                                kind: "folder".to_string(),
+                                folder: Some(folder.to_string()),
+                                cat: None,
+                                additive: true
+                            }).unwrap();
                         }
                     }
                     "open cat" => {
                         let file_path = app.dialog().file().blocking_pick_file();
-                        if file_path.is_none() {
-                            println!("{}", "file_path was not selected");
-                        } else {
-                            let file_path_val = file_path.unwrap().to_string();
-                            let conf_dirs = find_configuration_relative_to_catalog(&file_path_val);
-                            if conf_dirs.is_some()
-                            {
-                                let conf_val = conf_dirs.unwrap();
-                                update_app_state_for_config(app, &conf_val);
-                                let _ = app.emit("shared-app-state-set", {});
-                            }
-                            else
-                            {
-                                let _ans = app
-                                    .dialog()
-                                    .message("Failed to find necessary catalog components, try another catalog.")
-                                    .kind(MessageDialogKind::Error)
-                                    .blocking_show();
-                            }
+                        if file_path.is_some() {
+                            app.emit("menu-event", MenuEventArgs{
+                                kind: "cat".to_string(),
+                                folder: None,
+                                cat: Some(file_path.unwrap().to_string()),
+                                additive: true
+                            }).unwrap();
                         }
 
                     }
-                    // "settings" => {
-                    //     println!("expected but unimplemented event with id {:?}", event.id());
-                    // }
                     "quit" => {
                         app.exit(0);
                     }
@@ -703,13 +733,12 @@ pub fn run() {
                     }
                 }
             });
-
             // let _ = scope.allow_directory("/", true);
             // fixme: check os?
             // dbg!(scope.allowed());
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![get_shared_app_state, get_image_for_id, get_total_available_images, get_available_images])
+        .invoke_handler(tauri::generate_handler![get_shared_app_state, get_image_for_id, get_total_available_images, get_available_images, update_app_state_for_folder_and_emit_state, update_app_state_for_cat_and_emit_state])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

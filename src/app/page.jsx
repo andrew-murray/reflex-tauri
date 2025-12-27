@@ -481,6 +481,7 @@ export default function Home() {
     () => {
       let mounted = true;
       let unlisten = null;
+      let unlistenMenuEvent = null;
       const awaitable = async () => {
         unlisten = await listen('shared-app-state-set', (event) => {
           console.log("shared-app-state-set event received");
@@ -506,6 +507,45 @@ export default function Home() {
             }
           );
         });
+        unlistenMenuEvent = await listen("menu-event", (event) => {
+          console.log("received-menu-event");
+          console.log({event});
+          if(event.payload.kind == "folder")
+          {
+            // dump our current state so that the user has a way to re-point at the same
+            // folder and reload it
+            setInProgress(true);
+            setMetadataDBPath(null); 
+            setPreviewDBPath(null);
+            setRootFolderToSearch(null);
+            invoke(
+              "update_app_state_for_folder_and_emit_state",
+              {
+                folder: event.payload.folder,
+                additive: event.payload.additive
+              }
+            )
+          }
+          else if(event.payload.kind == "cat")
+          {
+            setInProgress(true);
+            setMetadataDBPath(null); 
+            setPreviewDBPath(null);
+            setRootFolderToSearch(null);
+            invoke(
+              "update_app_state_for_cat_and_emit_state",
+              {
+                cat: event.payload.cat,
+                additive: event.payload.additive
+              }
+            )
+          }
+          else
+          {
+            console.err("Received unrecognised menu event");
+            console.log(event);
+          }
+        });
       };
       awaitable();
       return () => {
@@ -514,6 +554,11 @@ export default function Home() {
         {
           unlisten();
           unlisten = null;
+        }
+        if(unlistenMenuEvent !== null)
+        {
+          unlistenMenuEvent();
+          unlistenMenuEvent = null;
         }
       }
     },

@@ -244,7 +244,7 @@ pub fn load_images_in_parallel(original_root_path: &String, filenames: &Vec<Stri
     return Ok(file_reads);
 }
 
-pub fn index_folder_faster(original_root_path: &String, root_path: &String) -> anyhow::Result<HashMap<String, (ImagePaths, Option<ImageData>)>>
+pub fn index_folder(original_root_path: &String, root_path: &String) -> anyhow::Result<HashMap<String, (ImagePaths, Option<ImageData>)>>
 {
     // here our implementation is in-serial, build the collection of files we want to import
     // then load em, somewhat in parallel
@@ -252,55 +252,6 @@ pub fn index_folder_faster(original_root_path: &String, root_path: &String) -> a
     // to let your CPU speed this task up
     let eligible_files = gather_eligible_files(original_root_path, root_path)?;
     return load_images_in_parallel(original_root_path, &eligible_files)
-}
-
-pub fn index_folder(original_root_path: &String, root_path: &String) -> anyhow::Result<HashMap<String, (ImagePaths, Option<ImageData>)>>
-{
-    let mut file_metadata : HashMap<String, (ImagePaths, Option<ImageData>)> = HashMap::new();
-    for entry in fs::read_dir(&root_path)? {
-        let entry = entry?;
-        let path = entry.path();
-        if path.is_dir()
-        {
-            let conv_path = path.into_os_string().into_string();
-            if conv_path.is_err()
-            {
-                // todo: log, rather than end?
-                return Err(anyhow::Error::from(
-                    anyhow::anyhow!("Failed to convert os path to string")
-                ));
-            }
-            let sub_result =  index_folder(original_root_path, conv_path.as_ref().unwrap());
-            if sub_result.is_ok()
-            {
-                file_metadata.extend(sub_result.unwrap());
-            }
-            else
-            {
-                // some sort of error!
-            }
-        }
-        else if path.is_file()
-        {
-            let conv_path = path.into_os_string().into_string();
-            if conv_path.is_err()
-            {
-                // todo: log, rather than end?
-                return Err(anyhow::Error::from(
-                    anyhow::anyhow!("Failed to convert os path to string")
-                ));
-            }
-            // we force
-            let conv_path_val = conv_path.unwrap();
-            let load_result = read_file_with_rexif(original_root_path, &conv_path_val);
-            if load_result.1.is_some()
-            {
-                // println!("{:?}", load_result.1.as_ref().unwrap());
-            }
-            file_metadata.insert(conv_path_val, load_result);
-        }
-    }
-    return Ok(file_metadata);
 }
 
 
