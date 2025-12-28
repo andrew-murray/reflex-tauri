@@ -478,16 +478,12 @@ fn maybe_image_data(tup: &(image_folder::ImagePaths, Option<image_folder::ImageD
     }
 }
 
-fn update_app_state_for_folder(app_state: tauri::State<'_, Mutex<AppState>>, folder: &String, _additive: bool)
+fn get_app_state_from_image_folder(folder: &String, _additive: bool) -> AppState
 {
-    println!("Starting update_app_state_for_folder");
     let image_index = image_folder::index_folder(folder, folder);
     if image_index.is_err()
     {
-        // todo: additive should affect this perhaps?
-        let mut mutable_app_state = app_state.lock().unwrap();
-        // MutexGuard<T> implements deref-able
-        *mutable_app_state = AppState {
+        return AppState {
             shared: SharedAppState {
                 conf_dirs: None,
                 root_dir: None,
@@ -497,7 +493,8 @@ fn update_app_state_for_folder(app_state: tauri::State<'_, Mutex<AppState>>, fol
             image_db_from_files: Vec::new(),
             image_db_to_index: HashMap::new()
         };
-    } else {
+    }
+    else {
         let image_db = image_index.unwrap();
         // there's probably a far-more-efficient way of doing this
         let image_db_key_to_index = image_db
@@ -509,13 +506,7 @@ fn update_app_state_for_folder(app_state: tauri::State<'_, Mutex<AppState>>, fol
             .values()
             .map(maybe_image_data)
             .collect();
-        // for x in image_db_values.iter()
-        // {
-        //     println!("{:?}", x);
-        // }
-        let mut mutable_app_state = app_state.lock().unwrap();
-        // MutexGuard<T> implements deref-able
-        *mutable_app_state = AppState {
+        return AppState {
             shared: SharedAppState {
                 conf_dirs: None,
                 root_dir: Some(folder.clone()),
@@ -526,6 +517,15 @@ fn update_app_state_for_folder(app_state: tauri::State<'_, Mutex<AppState>>, fol
             image_db_to_index: image_db_key_to_index
         };
     }
+}
+
+
+fn update_app_state_for_folder(app_state: tauri::State<'_, Mutex<AppState>>, folder: &String, additive: bool)
+{
+    println!("Starting update_app_state_for_folder");
+    let updated_app_state = get_app_state_from_image_folder(folder, additive);
+    let mut mutable_app_state = app_state.lock().unwrap();
+    *mutable_app_state = updated_app_state;
     println!("Ended update_app_state_for_folder");
 }
 
@@ -583,8 +583,6 @@ async fn update_app_state_for_cat_and_emit_state(app_handle: tauri::AppHandle, s
 
 fn initialise_app_state_for_config(app: &AppHandle, conf_dirs: &LightroomConfDirs)
 {
-    // TODO: BLOCKING IS BAD
-    // block_on(do_sql(&preview_db_path.unwrap()));
     let image_id_to_image = block_on(do_sql(&conf_dirs.preview_db_path));
     let app_state = AppState {
         shared: SharedAppState {
@@ -601,8 +599,6 @@ fn initialise_app_state_for_config(app: &AppHandle, conf_dirs: &LightroomConfDir
 
 fn reset_app_state_for_config(app: &AppHandle, conf_dirs: &LightroomConfDirs)
 {
-    // TODO: BLOCKING IS BAD
-    // block_on(do_sql(&preview_db_path.unwrap()));
     let image_id_to_image = block_on(do_sql(&conf_dirs.preview_db_path));
     let app_state = AppState {
         shared: SharedAppState {
@@ -659,11 +655,11 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_system_info::init())
         .setup(|app| {
+            allow_detected_drives(app);
             initialise_app_state(app.handle());
 
             // allowed the given directory
             // allow_all_ascii_drives(app);
-            allow_detected_drives(app);
 
             let file_menu = SubmenuBuilder::new(app, "File")
                 .text("open folder", "Open Folder")
