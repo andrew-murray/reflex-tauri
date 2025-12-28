@@ -19,6 +19,8 @@ import useScript from "./useScript"
 import { readFile } from '@tauri-apps/plugin-fs';
 import { invoke } from '@tauri-apps/api/core';
 import Grid from '@mui/material/Grid';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
 import { listen } from '@tauri-apps/api/event';
 import * as CameraData from "./CameraData";
 
@@ -809,7 +811,10 @@ export default function Home() {
   // make sure that the progress spinner is displayed nicely, by ensuring the
   // main is sized to the window, if we're only going to show a progress spinner in it
   // (could be handled in other ways but this works!)
-  const mainStyle = !inProgress ? alwaysMainStyle
+
+  // todo: convenient hack while I make a gallery
+  const makeFullScreen = true; // inProgress;
+  const mainStyle = !makeFullScreen ? alwaysMainStyle
     : Object.assign( 
       {},
       alwaysMainStyle,
@@ -818,6 +823,12 @@ export default function Home() {
         height: windowSize[1] 
       }
     );
+
+  const [activeTab, setActiveTab] = React.useState(0);
+
+  const handleTabChange = (event, newActiveTab) => {
+    setActiveTab(newActiveTab);
+  };
 
   return (<React.Fragment>        
       <CssBaseline />
@@ -851,23 +862,35 @@ export default function Home() {
           }
           {(images.length !== 0 && !inProgress) &&
             <Box style={{width: "100%", height: tableHeight, display: "flex", flexDirection: "column", marginTop: spaceBetweenComponents }}>
-              <DataTable
-                key={uniqueDataKey}
+              <Tabs
+                value={activeTab}
+                onChange={handleTabChange}
+                aria-label="table-gallery-switcher"
+                role="navigation"
+              >
+                <Tab label="Metadata" />
+                <Tab label="Gallery"  />
+              </Tabs>
+              {activeTab === 0 && 
+                <DataTable
+                  key={uniqueDataKey}
 
-                images={images}
-                filteredImages={filteredImageState.filteredImages}
-                filtersByMetric={filtersByMetric}
-                fixedHeight={tableHeight}
-                onSelectMetric={selectMetric}
-                onSetFiltersForMetric={onSetFiltersForMetric}
+                  images={images}
+                  filteredImages={filteredImageState.filteredImages}
+                  filtersByMetric={filtersByMetric}
+                  fixedHeight={tableHeight}
+                  onSelectMetric={selectMetric}
+                  onSetFiltersForMetric={onSetFiltersForMetric}
 
-                onSelectImageIndex={(i)=>{setActiveImageIndex(i);}}
-              />
+                  onSelectImageIndex={(i)=>{setActiveImageIndex(i);}}
+                />
+              }
+              {
+                activeTab === 1 &&
+                <Box  style={{width: "100%", height: tableHeight, color: "#ffff00"}} />
+              }
             </Box>
           }
-          {(!inProgress && images.length === 0) && <AsyncFileImport 
-            onImport={handleMetadataFilepath}
-          />}
           {inProgress && <WaitingMessage />}
           </div>
         </MainMinusDrawer>
