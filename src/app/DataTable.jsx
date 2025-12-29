@@ -175,7 +175,7 @@ const makeColumns = (onSelectImageIndex, repImage) =>
 
 // For pagination, define maximum of data per page
 
-const StaffTable = ({images, filteredImages, fixedHeight, filtersByMetric, onSelectMetric, onSetFiltersForMetric, onSelectImageIndex}) => {
+const StaffTable = ({images, filteredImages, fixedHeight, filtersByMetric, onSelectMetric, onSetFiltersForMetric, onSelectImageIndex, onHoverImageIndex, setPageLimits}) => {
 
   // Initiate your states
     const [loading, setLoading] = useState(false);
@@ -234,6 +234,8 @@ const StaffTable = ({images, filteredImages, fixedHeight, filtersByMetric, onSel
             onSetFiltersForMetric={onSetFiltersForMetric}
 
             onSelectImageIndex={onSelectImageIndex}
+            onSetHighlightedImageIndex={onHoverImageIndex}
+            setPageLimits={setPageLimits}
         />
     );
 };

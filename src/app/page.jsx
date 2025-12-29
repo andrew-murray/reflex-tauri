@@ -227,6 +227,8 @@ function useWindowSize() {
   return size;
 };
 
+
+
 export default function Home() {
   const [db,setDB] = React.useState(null);
   const [SQL, setSQL] = React.useState(null);
@@ -244,6 +246,8 @@ export default function Home() {
   const [filtersByMetric, setFiltersByMetric] = React.useState({});
   const [metricsToPlot, setMetricsToPlot] = React.useState([]);
   const [activeImageIndex, setActiveImageIndex] = React.useState(null);
+  const [selectedImageIndex, setSelectedImageIndex] = React.useState(0);
+  const [pageLimits, setPageLimits] = React.useState([0, 10]);
 
   const [metadataDBPath, setMetadataDBPath] = React.useState(null);
   const [previewDBPath, setPreviewDBPath] = React.useState(null);
@@ -829,6 +833,10 @@ export default function Home() {
   const handleTabChange = (event, newActiveTab) => {
     setActiveTab(newActiveTab);
   };
+  const getBoundedPageLimits = () => [
+    Math.min(Math.max(pageLimits[0], 0), filteredImageState.filteredImages.length - 1),
+    Math.min(Math.max(pageLimits[1], 0), filteredImageState.filteredImages.length - 1),
+  ];
 
   return (<React.Fragment>        
       <CssBaseline />
@@ -843,6 +851,12 @@ export default function Home() {
             folderData={folderData}
             handleDrawerClose={handleDrawerClose}
             handleDrawerOpen={handleDrawerOpen}
+
+            showImage
+            images={filteredImageState.filteredImages}
+            imageToOrientation={imageToOrientation}
+            activeImageIndex={selectedImageIndex}
+            imagePageLimits={getBoundedPageLimits()}
           />
         }
         <MainMinusDrawer open={navOpen} style={mainStyle}>
@@ -885,6 +899,9 @@ export default function Home() {
                   onSetFiltersForMetric={onSetFiltersForMetric}
 
                   onSelectImageIndex={(i)=>{setActiveImageIndex(i);}}
+                  onHoverImageIndex={(i)=>{setSelectedImageIndex(i);}}
+                  setPageLimits={setPageLimits}
+                  imagePageLimits={pageLimits}
                 />
               }
               {

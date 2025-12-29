@@ -354,7 +354,9 @@ const TableUI = ({
   searchLabel = "Search",
   EmptyText,
   children,
-  handleRow
+  onSetHighlightedImageIndex,
+  handleRow,
+  setPageLimits
 }) => {
     const [activeFilterDialog, setActiveFilterDialog] = useState(null);
     const [fontSizeHeight, setFontSizeHeight] = React.useState(0);
@@ -376,6 +378,17 @@ const TableUI = ({
       [headerComponent]
     );
 
+            
+    const handleRowHover = (row, event) => {
+      // this doesn't quite work, I need a notion of persistent/non-persistent selection?
+      // also ... is the image loading fast enough??
+      onSetHighlightedImageIndex(row.index);
+    }
+    const handleRowLeave = (row, event) => {
+      // this doesn't quite work, I need a notion of persistent/non-persistent selection?
+      // also ... is the image loading fast enough??
+      onSetHighlightedImageIndex(null);
+    }
 
     // const emSize = boxRef !== null ? parseFloat(getComputedStyle(boxRef.current).fontSize) : 0;
     // header contains two buttons, vertically
@@ -457,6 +470,18 @@ const TableUI = ({
       []
     );
 
+    // awkwardly pass out our page limits, so other components can react to them
+    React.useEffect(
+      () => {
+        // todo: it's not the best place to handle this corner case, I don't think
+        if(pageStart !== pageEnd)
+        {
+          setPageLimits([pageStart,pageEnd])
+        }
+      },
+      [pageStart, pageEnd] // , images, filteredImages, fixedHeight
+    )
+
     return (
       <Box style={{height: fixedHeight, display: "flex", flexDirection: "column"}} ref={boxRef}>
         {boxRef !== null && 
@@ -524,7 +549,12 @@ const TableUI = ({
               <TableBody>
                 {!isFetching ? (
                   getRowModel()?.rows.slice(pageStart, pageEnd).map((row) => (
-                    <StyledTableRow key={row.id} onClick={handleRow}>
+                    <StyledTableRow
+                        key={row.id}
+                        onClick={handleRow}
+                        onMouseEnter={e => handleRowHover(row, e)}
+                        onMouseLeave={e => handleRowLeave(row, e)}
+                      >
                       {row.getVisibleCells().map((cell) => (
                         <TableCell
                           onClick={() => onClickRow?.(cell, row)}

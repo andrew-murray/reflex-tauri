@@ -30,6 +30,7 @@ import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import React from 'react'
 import {pathsep} from "./defs"
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
+import AsyncImageFromApi from "./AsyncImageFromApi";
 
 const SAMPLE_PRODUCTS = [
   {
@@ -166,7 +167,12 @@ function NavDrawer({
   selectedFolders,
   onSelectFolders,
   selectedFilesystem,
-  onSelectFilesystem
+  onSelectFilesystem,
+  showImage,
+  activeImageIndex,
+  imageToOrientation,
+  imagePageLimits,
+  images
 })
 {
   const theme = useTheme();
@@ -327,6 +333,19 @@ function NavDrawer({
     }
   ];
 
+  // FIXME: This is a bit taxing on my system, I'd rather memoize some components here
+  // which will involve lifting the visibility up a little
+  const imageFromImageIndex = (index) => <AsyncImageFromApi
+    image={images[index]}
+    height={200}
+    orientation={images[index] !== undefined ? imageToOrientation[images[index].id] : undefined}
+    imageStyle={{objectFit: "contain", display: index === activeImageIndex ? undefined : "none"}}
+  />;
+
+  const quickRange  = (lo, hi) => {
+    return [...Array(Math.max(0, hi - lo)).keys()].map(i => i + lo);
+  }
+
   return <StyledDrawer variant="permanent" open={open}>
     {open && 
       <DrawerHeader>
@@ -341,10 +360,31 @@ function NavDrawer({
           {(menuElements.concat(buttonElements)).map(mkListItem)}
         </List>
       }
-      {open && 
-         <List style={{maxWidth: "100%"}} disablePadding>
-        {buttonElements.map(mkAccordionItem)}
-        </List>
+      {open &&
+          <div style={{display: "flex", flexDirection: "column", flexGrow: 1}}>
+           <List style={{maxWidth: "100%"}} disablePadding>
+              {buttonElements.map(mkAccordionItem)}
+            </List>
+            {showImage && 
+              <React.Fragment>
+              <div style={{flexGrow: 1}} />
+                <Paper style={{
+                  width: "100%",
+                  height: 200,  
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center"
+                }} >
+                  {imagePageLimits !== undefined  && 
+                    quickRange(imagePageLimits[0], imagePageLimits[1]).map(imageFromImageIndex)
+                  }
+                  {imagePageLimits === undefined && activeImageIndex !== undefined &&
+                    imageFromImageIndex(activeImageIndex)
+                  }
+                </Paper>
+              </React.Fragment>
+            }
+          </div>
       }
   </StyledDrawer>
 };
