@@ -385,8 +385,9 @@ const TableUI = ({
     // muiButtonSize appears to be 32 pixels... we set minHeight to 40
     // to ensure that it's appropriately padded, but at the moment
     // we let pagination grow to fill the space left when we can't fit a full row
+    const tabHeight = 48;
     const paginationHeight = 32 + 2 * 4;
-    const availableHeight = fixedHeight - headerHeight - paginationHeight;
+    const availableHeight = fixedHeight - headerHeight - paginationHeight - tabHeight;
 
     // so I can't tell you why (need to understand border sharing better)
     // but the nuances of how css shares borders, mean our 1 pixel border, becomes a 0.6667 border for each gap between rows!
