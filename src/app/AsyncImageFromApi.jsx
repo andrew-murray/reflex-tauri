@@ -6,6 +6,7 @@ import Skeleton from '@mui/material/Skeleton';
 // polyfill for toBase64
 import "core-js/modules/esnext.uint8-array.to-base64.js";
 import { invoke } from '@tauri-apps/api/core';
+import Paper from '@mui/material/Paper';
 
 const getImageTypeFromImage = (image) => {
   if (!!image["adobe"])
@@ -34,7 +35,8 @@ export default function AsyncImageFromApi({image, imageStyle, orientation, width
         let imageSrc = null;
         try
         {
-          console.log({image});
+          // note that if we don't have an image set, this will throw
+          // and we'll get our LoadingError.jpg
           const contents = await invoke(
             "get_image_for_id",
             {
@@ -75,10 +77,11 @@ export default function AsyncImageFromApi({image, imageStyle, orientation, width
   // if we've had a loading error and are displaying the freepic image
   // force portrait orientation (similarly if we haven't loaded an image yet)
   const usingDefaultImage = (imageState === null || imageState.error === true);
+  // note that the defaultImage is square so no need to rotate
   const oClass = usingDefaultImage ?  undefined : oClassMap[orientation];
   // this is a little awkward, could we read the dimensions from the image instead?
-  const rotatedWidth = usingDefaultImage ?  2000 : (oClass !== undefined ? height: width);
-  const rotatedHeight = usingDefaultImage ? 2000 : (oClass !== undefined ? width: height);
+  const rotatedWidth = oClass === undefined ? width: height;
+  const rotatedHeight = oClass === undefined ? height: width;
 
   return <React.Fragment>
     {imageState === null && <Skeleton variant="rectangular"
