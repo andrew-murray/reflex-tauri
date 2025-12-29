@@ -868,8 +868,10 @@ export default function Home() {
                 aria-label="table-gallery-switcher"
                 role="navigation"
               >
-                <Tab label="Metadata" />
-                <Tab label="Gallery"  />
+                <Tab label="Metadata" style={{
+                  background: "#232323" // <!-- colour chosen to match the table background -->
+                }}/> 
+                <Tab label="Gallery"  style={{background: "#232323"}}/>
               </Tabs>
               {activeTab === 0 && 
                 <DataTable
