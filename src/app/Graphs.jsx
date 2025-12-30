@@ -208,7 +208,9 @@ export function BarGraph({data, dataKey, color, logMode, freqMode, ratingMode})
       }
       {ratingMode !== null && ratingMode !== undefined && ratingMode.map((r,index) => <Bar
         stackId="a"
-        dataKey={ freqMode ? `ratingFreqs.${r}` : `ratingCounts.${r}`} fill={ScoreColorPalette[ (4-index) % ScoreColorPalette.length]} activeBar={<Rectangle fill="blue" stroke="blue" />}
+        dataKey={ freqMode ? `ratingFreqs.${r}` : `ratingCounts.${r}`}
+        fill={ScoreColorPalette[ (4-index) % ScoreColorPalette.length]}
+        activeBar={<Rectangle fill="blue" stroke="blue" />}
         name={`rating=${r}`}
       />)}
       {ratingMode !== null && ratingMode !== undefined && 
