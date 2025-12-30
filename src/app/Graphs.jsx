@@ -198,7 +198,13 @@ export function BarGraph({data, dataKey, color, logMode, freqMode, ratingMode})
         labelStyle={{color}}
       />
       {(ratingMode === undefined || ratingMode === null) && 
-        <Bar stackId="a" dataKey={"count"} name={"Images"} fill={color} activeBar={<Rectangle fill="pink" stroke="blue" />} />
+        <Bar
+          stackId="a"
+          dataKey={"count"}
+          name={"Images"}
+          fill={color}
+          activeBar={<Rectangle fill="pink" stroke="blue" />}
+        />
       }
       {ratingMode !== null && ratingMode !== undefined && ratingMode.map((r,index) => <Bar
         stackId="a"
