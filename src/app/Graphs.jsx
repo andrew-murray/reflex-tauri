@@ -1,4 +1,4 @@
-import { BarChart, PieChart, Pie, Bar, Rectangle, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label } from 'recharts';
+import { BarChart, PieChart, Pie, Bar, Rectangle, ReferenceArea, ReferenceLine, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label } from 'recharts';
 import {formatters, parsers, titles} from "./CameraData";
 import { scaleSymlog } from 'd3-scale';
 const customLogScale = scaleSymlog();
@@ -87,9 +87,67 @@ export function PieGraph({data, dataKey, color})
 }
 
 // TODO: Make API for the graphs match? Data is currently not compatible
-export function BarGraphForDialog({data, dataKey, color})
+export function BarGraphForDialog({data, dataKey, color, highlightBounds})
 {
   const formattedData = GetFormattedData(data, dataKey);
+  let categoryBounds = undefined;
+  let lineBetweenCategories = undefined;
+  if (highlightBounds !== undefined)
+  {
+    const values = formattedData.map(x => x.value);
+    const valuesInRange = values.map( v => v >= highlightBounds[0] && v <= highlightBounds[1]);
+    const indexGT = valuesInRange.indexOf(true);
+    const indexLT = valuesInRange.lastIndexOf(true);
+    // could have more checks on these
+    if(indexGT !== -1 && indexLT !== -1)
+    {
+      categoryBounds = [values[indexGT], values[indexLT]];
+    }
+    else
+    {
+      // none of our categories satisfy our bars, but there's some awkward cases here
+
+      // paranoid check, shouldn't get here but let's not do math in this case
+      if (values.length !== 0)
+      {
+        // our first category is too *high* for our range
+        if (values[0] > highlightBounds[1])
+        {
+          lineBetweenCategories = {
+            x: values[0],
+            position: "start"
+          };
+        }
+        // our second category is too *low* for our range
+        else if(values[values.length - 1] < highlightBounds[0])
+        {
+          // note: that we don't really need this case, but it feels nicely symmetric
+          lineBetweenCategories = {
+            x: values[values.length - 1],
+            position: "end"
+          };
+        }
+        else
+        {
+          // we know that our filterRange is between some bin,
+          // so we look for the first element > than our bounds
+          const valuesThatAreLowerThanOurRange = values.map( v => v >= highlightBounds[0] && v >= highlightBounds[1]);
+          const indexLast = valuesThatAreLowerThanOurRange.indexOf(true);
+          if (indexLast === -1)
+          {
+            // this is off the right-end of the graph ... this should never now
+          }
+          else
+          {
+            lineBetweenCategories = {
+              x: values[indexLast],
+              position: "start"
+            }
+          }
+        }
+      }
+    }
+  }
   const title = titles[dataKey] || dataKey;
   return <ResponsiveContainer width="100%" height="100%">
     <BarChart
@@ -113,6 +171,19 @@ export function BarGraphForDialog({data, dataKey, color})
           labelFormatter={labelFormatters[dataKey]}
           labelStyle={{color}}
         />
+        {categoryBounds !== undefined &&
+          <ReferenceArea
+            x1={categoryBounds[0]}
+            x2={categoryBounds[1]}
+          />
+        }
+        {
+          lineBetweenCategories !== undefined &&
+          <ReferenceLine
+            x={lineBetweenCategories.x}
+            position={lineBetweenCategories.position}
+          />
+        }
         <Bar dataKey="count" fill={color} activeBar={<Rectangle fill="pink" stroke="blue" />} />
       </BarChart>
     </ResponsiveContainer>

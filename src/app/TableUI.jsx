@@ -127,10 +127,17 @@ export function NumericFilterDialog({images, filteredImages, metricKey, filtersF
     [filteredImages, metricKey]
   );
   const [filters, setFilters] = useState( filtersForMetric === undefined ? null : filtersForMetric );
-  const [useStoppedScale, setUseStoppedScale] = useState(true);
+
+  const metricsThatGoInStops = new Set([
+    "shutter_speed_value",
+    "aperture_value",
+    "iso_speed_rating"
+  ]);
+  const metricLikesStops = metricsThatGoInStops.has(metricKey);
+  const [useStoppedScale, setUseStoppedScale] = useState(metricLikesStops);
 
   const dataMin = formattedData.length === 0 ? 0 : Math.min(...formattedData.map(d => d.value));
-  const dataMax = formattedData.length === 0 ? 1 :Math.max(...formattedData.map(d => d.value));
+  const dataMax = formattedData.length === 0 ? 1 : Math.max(...formattedData.map(d => d.value));
   // even if our data exhibits a narrower range than our current filters, retain the current filters
   const filterMin = filtersForMetric !== undefined ? filtersForMetric.range[0] : dataMin;
   const filterMax = filtersForMetric !== undefined ? filtersForMetric.range[1] : dataMax;
@@ -197,19 +204,16 @@ export function NumericFilterDialog({images, filteredImages, metricKey, filtersF
 
   // stoppedValues are recorded as slider steps
   // and the linear slider values are recorded naturally
+  const valuesAreSet = stoppedValues !== null || values !== null;
   const valuesForStoppedSlider = stoppedValues !== null ? stoppedValues : 
     (values !== null ? values.map(rawToStopped) : [0, normalSteps]);
   const valuesForLinearSlider = values !== null ? values : 
     (stoppedValues !== null ? stoppedValues.map(stoppedToRaw) : [0, normalSteps]);
   const applyAndClose = () =>
   {
-    if (values !== null)
+    if (values !== null || stoppedValues !== null)
     {
-      onSetFiltersForMetric(metricKey, { range: values });
-    }
-    else if(stoppedValues !== null)
-    {
-      onSetFiltersForMetric(metricKey, { range: stoppedValues.map(stoppedToRaw) });
+      onSetFiltersForMetric(metricKey, { range: valuesForLinearSlider });
     }
     else
     {
@@ -241,6 +245,7 @@ export function NumericFilterDialog({images, filteredImages, metricKey, filtersF
           <Graphs.BarGraphForDialog
             data={images}
             dataKey={metricKey}
+            highlightBounds={valuesAreSet ? valuesForLinearSlider : undefined}
           />
         </Paper>
       </Box>
@@ -277,15 +282,17 @@ export function NumericFilterDialog({images, filteredImages, metricKey, filtersF
       </Box>
     </DialogContent>
     <DialogActions>
-      <FormControlLabel
-        control={
-          <Switch
-            checked={useStoppedScale}
-            onChange={(event)=>{setUseStoppedScale(event.target.checked);}}
-          />
-        }
-        label="Use Stopped Scale"
-      />
+      {metricLikesStops && 
+        <FormControlLabel
+          control={
+            <Switch
+              checked={useStoppedScale}
+              onChange={(event)=>{setUseStoppedScale(event.target.checked);}}
+            />
+          }
+          label="Use Stopped Scale"
+        />
+      }
       <Button onClick={handleClose}>Cancel</Button>
       <Button onClick={applyAndClose}>Apply</Button>
     </DialogActions>
