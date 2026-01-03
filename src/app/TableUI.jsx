@@ -48,7 +48,7 @@ import ListSubheader from '@mui/material/ListSubheader';
 import Slider from '@mui/material/Slider';
 import * as Graphs from "./Graphs"
 import Tooltip from '@mui/material/Tooltip';
-
+import FormControlLabel from '@mui/material/FormControlLabel';
 
 // Styles with styled-component
 
@@ -127,9 +127,7 @@ export function NumericFilterDialog({images, filteredImages, metricKey, filtersF
     [filteredImages, metricKey]
   );
   const [filters, setFilters] = useState( filtersForMetric === undefined ? null : filtersForMetric );
-  const handleChange = (event, newValues) => {
-    setValues(newValues);
-  };
+  const [useStoppedScale, setUseStoppedScale] = useState(true);
 
   const dataMin = formattedData.length === 0 ? 0 : Math.min(...formattedData.map(d => d.value));
   const dataMax = formattedData.length === 0 ? 1 :Math.max(...formattedData.map(d => d.value));
@@ -138,16 +136,87 @@ export function NumericFilterDialog({images, filteredImages, metricKey, filtersF
   const filterMax = filtersForMetric !== undefined ? filtersForMetric.range[1] : dataMax;
 
   const [values, setValues] = React.useState(null);
+  const [stoppedValues, setStoppedValues] = useState(null);
+
+  const handleChange = (event, newValues) => {
+    setValues(newValues);
+    setStoppedValues(null);
+  };
+
+  const handleStoppedChange = (event, newValues) => {
+    setStoppedValues(newValues);
+    setValues(null);
+  };
 
   const filterRange = filterMax - filterMin;
 
-  let filterIncrement = filterRange/100.0;
+  const normalSteps = 50;
+
+  let filterIncrement = filterRange/normalSteps;
   // let's arbitrarily clamp if we're dealing with teeny quantities
-  if (filterIncrement < 0.05)
+  // but shutterSpeed gets to be a bit useless
+  const metricStepsToNotClamp = new Set([
+      "shutter_speed_value"
+  ]);
+  if (filterIncrement < 0.05 && !metricStepsToNotClamp.has(metricKey))
   {
     filterIncrement = 0.05;
   }
   const sliderStep = Number(filterIncrement.toPrecision(2));
+
+  const totalMultiplier = filterMax/filterMin;
+  const stepQuotient = Math.pow(totalMultiplier, 1.0 / normalSteps);
+
+  // todo: we can fix all these as tables really
+  const stoppedValueDisplay = (value)=>{
+    const outValue = stoppedToRaw(value);
+    if (metricKey === "shutter_speed_value")
+    {
+      const denom = Math.round(1/outValue);
+      return `${outValue.toPrecision(3)} (1/${denom})`;
+    }
+    else
+    {
+      return `${outValue.toPrecision(3)}`;
+    }
+  };
+
+  const typicalValueDisplay = (value)=>{
+    return `${value.toPrecision(3)}`;
+  };
+
+  const stoppedToRaw = (value) => {
+    const mult = Math.pow(stepQuotient, value);
+    const outValue = filterMin * mult;
+    return outValue;
+  };
+  const rawToStopped = (value) => {
+    const quotients = Math.log(value/filterMin) / Math.log(stepQuotient);
+    return quotients;
+  };
+
+  // stoppedValues are recorded as slider steps
+  // and the linear slider values are recorded naturally
+  const valuesForStoppedSlider = stoppedValues !== null ? stoppedValues : 
+    (values !== null ? values.map(rawToStopped) : [0, normalSteps]);
+  const valuesForLinearSlider = values !== null ? values : 
+    (stoppedValues !== null ? stoppedValues.map(stoppedToRaw) : [0, normalSteps]);
+  const applyAndClose = () =>
+  {
+    if (values !== null)
+    {
+      onSetFiltersForMetric(metricKey, { range: values });
+    }
+    else if(stoppedValues !== null)
+    {
+      onSetFiltersForMetric(metricKey, { range: stoppedValues.map(stoppedToRaw) });
+    }
+    else
+    {
+      onSetFiltersForMetric(metricKey, undefined);
+    }
+    handleClose();
+  };
   return <Dialog
     open={true}
     onClose={handleClose}
@@ -171,29 +240,54 @@ export function NumericFilterDialog({images, filteredImages, metricKey, filtersF
         <Paper style={{width: "100%", minWidth: 500, height: 400, padding: 10, overflow: "hidden"}}>
           <Graphs.BarGraphForDialog
             data={images}
-            dataKey={metricKey} 
+            dataKey={metricKey}
           />
         </Paper>
       </Box>
       <Box style={{minHeight: 50, margin: "15px 25px 15px"}}>
-        <Slider
-          getAriaLabel={() => `${title} Filter Range`}
-          value={values === null ? [filterMin, filterMax] : values}
-          onChange={handleChange}
-          valueLabelDisplay="auto"
-          style={{width: "100%"}}
-          min={filterMin}
-          max={filterMax}
-          step={sliderStep}
-        />
+        {useStoppedScale &&
+          <Slider
+            getAriaLabel={() => `${title} Filter Range`}
+            value={valuesForStoppedSlider}
+            onChange={handleStoppedChange}
+            valueLabelDisplay="auto"
+            getAriaValueText={stoppedValueDisplay}
+            valueLabelFormat={stoppedValueDisplay}
+            style={{width: "100%"}}
+            min={0}
+            max={normalSteps}
+            steps={normalSteps}
+            step={1}
+          />
+        }
+        {!useStoppedScale &&
+          <Slider
+            getAriaLabel={() => `${title} Filter Range`}
+            value={valuesForLinearSlider}
+            onChange={handleChange}
+            valueLabelDisplay="auto"
+            getAriaValueText={typicalValueDisplay}
+            valueLabelFormat={typicalValueDisplay}
+            style={{width: "100%"}}
+            min={filterMin}
+            max={filterMax}
+            step={sliderStep}
+          />
+        }
       </Box>
     </DialogContent>
     <DialogActions>
+      <FormControlLabel
+        control={
+          <Switch
+            checked={useStoppedScale}
+            onChange={(event)=>{setUseStoppedScale(event.target.checked);}}
+          />
+        }
+        label="Use Stopped Scale"
+      />
       <Button onClick={handleClose}>Cancel</Button>
-      <Button onClick={()=>{ 
-        onSetFiltersForMetric(metricKey, values === null ? undefined : { range: values });
-        handleClose();
-      }}>Apply</Button>
+      <Button onClick={applyAndClose}>Apply</Button>
     </DialogActions>
   </Dialog>
 };
