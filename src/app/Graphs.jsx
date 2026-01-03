@@ -92,6 +92,10 @@ export function BarGraphForDialog({data, dataKey, color, highlightBounds})
   const formattedData = GetFormattedData(data, dataKey);
   let categoryBounds = undefined;
   let lineBetweenCategories = undefined;
+  console.log({
+    highlightBounds,
+    formattedData
+  })
   if (highlightBounds !== undefined)
   {
     const values = formattedData.map(x => x.value);
@@ -101,7 +105,7 @@ export function BarGraphForDialog({data, dataKey, color, highlightBounds})
     // could have more checks on these
     if(indexGT !== -1 && indexLT !== -1)
     {
-      categoryBounds = [values[indexGT], values[indexLT]];
+      categoryBounds = [formattedData[indexGT].name, formattedData[indexLT].name];
     }
     else
     {
@@ -114,7 +118,7 @@ export function BarGraphForDialog({data, dataKey, color, highlightBounds})
         if (values[0] > highlightBounds[1])
         {
           lineBetweenCategories = {
-            x: values[0],
+            x: formattedData[0].name,
             position: "start"
           };
         }
@@ -123,7 +127,7 @@ export function BarGraphForDialog({data, dataKey, color, highlightBounds})
         {
           // note: that we don't really need this case, but it feels nicely symmetric
           lineBetweenCategories = {
-            x: values[values.length - 1],
+            x: formattedData[values.length - 1].name,
             position: "end"
           };
         }
@@ -135,12 +139,13 @@ export function BarGraphForDialog({data, dataKey, color, highlightBounds})
           const indexLast = valuesThatAreLowerThanOurRange.indexOf(true);
           if (indexLast === -1)
           {
-            // this is off the right-end of the graph ... this should never now
+            // this is off the right-end of the graph ... this should never happen
+            // TODO: Error-handling?
           }
           else
           {
             lineBetweenCategories = {
-              x: values[indexLast],
+              x: formattedData[indexLast].name,
               position: "start"
             }
           }
