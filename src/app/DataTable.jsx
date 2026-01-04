@@ -184,7 +184,10 @@ const StaffTable = ({
     onSetFiltersForMetric,
     onFocusImageIndex,
     onSetHoveredImageIndex,
-    setPageLimits
+    onSetSelectedImageIndex,
+    selectedImageIndex,
+    setPageLimits,
+    onPageChange
 }) => {
 
 
@@ -219,6 +222,8 @@ const StaffTable = ({
 
     const handlePageChange = React.useCallback((page) => {
         setCurrentPage(page);
+        // communicate this change outwards
+        onPageChange(page);
     });
 
     const Columns = React.useMemo( () => {
@@ -245,7 +250,15 @@ const StaffTable = ({
             onSelectMetric={onSelectMetric}
             onSetFiltersForMetric={onSetFiltersForMetric}
             onSetHoveredImageIndex={onSetHoveredImageIndex}
+            onSetSelectedImageIndex={onSetSelectedImageIndex}
+            selectedImageIndex={selectedImageIndex}
             setPageLimits={setPageLimits}
+            onClickRow={
+                (cell, row) => {
+                    console.log({cell, row});
+                    onSetSelectedImageIndex(row.index);
+                }
+            }
         />
     );
 };

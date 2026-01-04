@@ -245,9 +245,15 @@ export default function Home() {
   const [filesystemFilters, setFilesystemFilters] = React.useState([]);
   const [filtersByMetric, setFiltersByMetric] = React.useState({});
   const [metricsToPlot, setMetricsToPlot] = React.useState([]);
-  const [activeImageIndex, setActiveImageIndex] = React.useState(null);
+  const [focusedImageIndex, setFocusedImageIndex] = React.useState(null);
+  const [hoveredImageIndex, setHoveredImageIndex] = React.useState(null);
   const [selectedImageIndex, setSelectedImageIndex] = React.useState(null);
   const [pageLimits, setPageLimits] = React.useState([0, 10]);
+  const onPageChange = (page) => {
+    // we want to make sure we nuke the selectedImage here
+    // I think the user-notion is that shouldn't be persistent
+    setSelectedImageIndex(null);
+  };
 
   const [metadataDBPath, setMetadataDBPath] = React.useState(null);
   const [previewDBPath, setPreviewDBPath] = React.useState(null);
@@ -855,7 +861,7 @@ export default function Home() {
             showImage
             images={filteredImageState.filteredImages}
             imageToOrientation={imageToOrientation}
-            activeImageIndex={selectedImageIndex}
+            activeImageIndex={hoveredImageIndex !== null ? hoveredImageIndex : selectedImageIndex}
             imagePageLimits={getBoundedPageLimits()}
           />
         }
@@ -898,10 +904,14 @@ export default function Home() {
                   onSelectMetric={selectMetric}
                   onSetFiltersForMetric={onSetFiltersForMetric}
 
-                  onFocusImageIndex={(i)=>{setActiveImageIndex(i);}}
-                  onSetHoveredImageIndex={(i)=>{setSelectedImageIndex(i);}}
+                  onFocusImageIndex={(i)=>{setFocusedImageIndex(i);}}
+                  onSetHoveredImageIndex={(i)=>{setHoveredImageIndex(i);}}
+                  onSetSelectedImageIndex={(i)=>{setSelectedImageIndex(i);}}
+                  selectedImageIndex={selectedImageIndex}
+
                   setPageLimits={setPageLimits}
                   imagePageLimits={pageLimits}
+                  onPageChange={onPageChange}
                 />
               }
               {
@@ -927,12 +937,12 @@ export default function Home() {
           />
         })}
         {
-          activeImageIndex !== null && <TempLightboxDialog
+          focusedImageIndex !== null && <TempLightboxDialog
             images={filteredImageState.filteredImages}
-            activeImageIndex={activeImageIndex}
-            setActiveImageIndex={setActiveImageIndex}
+            focusedImageIndex={focusedImageIndex}
+            setFocusedImageIndex={setFocusedImageIndex}
             imageToOrientation={imageToOrientation}
-            onClose={()=>{setActiveImageIndex(null);}}
+            onClose={()=>{setFocusedImageIndex(null);}}
           />
         }
       </Box>

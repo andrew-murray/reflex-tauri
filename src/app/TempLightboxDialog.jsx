@@ -21,7 +21,7 @@ import "yet-another-react-lightbox/styles.css";
 import "yet-another-react-lightbox/plugins/captions.css";
 import "yet-another-react-lightbox/plugins/thumbnails.css";
 
-export default function TempLightboxDialog({images, activeImageIndex, imageToOrientation, setActiveImage, onClose}) {
+export default function TempLightboxDialog({images, focusedImageIndex, imageToOrientation, setFocusedImage, onClose}) {
   // Get the 0th element assuming this to be unique if-it-exists and undefined otherwise
   // the filepath may not be a useful title, so don't have one for now
   const memoizedSlides = React.useMemo( () => {
@@ -35,8 +35,8 @@ export default function TempLightboxDialog({images, activeImageIndex, imageToOri
     );
   });
   return <Lightbox
-    index={activeImageIndex}
-    open={activeImageIndex >= 0}
+    index={focusedImageIndex}
+    open={focusedImageIndex >= 0}
     slides={memoizedSlides}
     render={{
       slide: ({slide, rect}) => {

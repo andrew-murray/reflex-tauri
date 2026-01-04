@@ -52,7 +52,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 
 // Styles with styled-component
 
-export const StyledTableRow = styled(TableRow)(({ theme }) => {
+export const StyledTableRow = styled(TableRow)(({ theme, selected }) => {
   const dark = theme.palette.mode === "dark";
   const common = {
     "&:last-child td": { 
@@ -74,6 +74,9 @@ export const StyledTableRow = styled(TableRow)(({ theme }) => {
           backgroundColor: theme.palette.background.paper
         }
       },
+      selected ? {
+        backgroundColor: theme.palette.background.selected
+      } : {},
       common
     )
   }
@@ -87,6 +90,9 @@ export const StyledTableRow = styled(TableRow)(({ theme }) => {
            backgroundColor: theme.palette.background.alternate
         }
       },
+      selected ? {
+        backgroundColor: theme.palette.background.selected
+      } : {},
       // common must come last, for the hover to apply after the backgroundColor
       common
     )
@@ -662,6 +668,7 @@ const TableUI = ({
                         onClick={handleRow}
                         onMouseEnter={e => handleRowHover(row, e)}
                         onMouseLeave={e => handleRowLeave(row, e)}
+                        selected={row.index === selectedImageIndex}
                       >
                       {row.getVisibleCells().map((cell) => (
                         <TableCell
