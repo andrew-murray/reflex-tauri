@@ -840,8 +840,8 @@ export default function Home() {
     setActiveTab(newActiveTab);
   };
   const getBoundedPageLimits = () => [
-    Math.min(Math.max(pageLimits[0], 0), filteredImageState.filteredImages.length - 1),
-    Math.min(Math.max(pageLimits[1], 0), filteredImageState.filteredImages.length - 1),
+    Math.min(Math.max(pageLimits[0], 0), filteredImageState.filteredImages.length),
+    Math.min(Math.max(pageLimits[1], 0), filteredImageState.filteredImages.length),
   ];
 
   return (<React.Fragment>        
