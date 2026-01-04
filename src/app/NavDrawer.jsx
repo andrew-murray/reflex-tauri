@@ -336,6 +336,7 @@ function NavDrawer({
   // FIXME: This is a bit taxing on my system, I'd rather memoize some components here
   // which will involve lifting the visibility up a little
   const imageFromImageIndex = (index) => <AsyncImageFromApi
+    key={`image-${index}`}
     image={images[index]}
     height={200}
     orientation={images[index] !== undefined ? imageToOrientation[images[index].id] : undefined}
