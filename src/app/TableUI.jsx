@@ -110,7 +110,7 @@ const filteredNumeric = [
   "focal_length"
 ];
 
-export function NumericFilterDialog({images, filteredImages, metricKey, filtersForMetric, handleClose, onSetFiltersForMetric, onSelectImageIndex}) {
+export function NumericFilterDialog({images, filteredImages, metricKey, filtersForMetric, handleClose, onSetFiltersForMetric}) {
   // TODO: For shutterSpeed at least, we need to implement
   // a different scale. So much of the shutter speed is in the (0,1) range, but ... it's reasonable to have values from 0-60
   // https://mui.com/material-ui/react-slider/#non-linear-scale
@@ -305,8 +305,7 @@ export function FilterDialog({
   metricKey,
   filtersForMetric,
   handleClose,
-  onSetFiltersForMetric,
-  onSelectImageIndex
+  onSetFiltersForMetric
 }) {
 
   if (filteredNumeric.includes(metricKey)){
@@ -317,7 +316,6 @@ export function FilterDialog({
       filtersForMetric={filtersForMetric}
       handleClose={handleClose}
       onSetFiltersForMetric={onSetFiltersForMetric}
-      onSelectImageIndex={onSelectImageIndex}
     />
   }
   let title = metricKey;
