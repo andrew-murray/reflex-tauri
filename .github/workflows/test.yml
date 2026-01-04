@@ -2,8 +2,6 @@ name: 'test'
 
 on: [push]
 
-# This workflow builds the app without publishing
-
 jobs:
   test-tauri:
     strategy:
@@ -20,12 +18,6 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
-      - name: Get Next Version
-        id: semver
-        uses: ietf-tools/semver-action@v1
-        with:
-          token: ${{ github.token }}
-          branch: main
 
       - name: setup node
         uses: actions/setup-node@v4
@@ -52,4 +44,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          tagName: reflex-v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
+          releaseName: 'Reflex v__VERSION__'
+          releaseBody: 'See the assets to download this version and install.'
+          releaseDraft: true
+          prerelease: true
           args: ${{ matrix.args }}
