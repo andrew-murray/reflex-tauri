@@ -565,6 +565,7 @@ const TableUI = ({
       search && search(e.target.value);
     };
     const pageStart = page * itemsPerPage;
+    // pageEnd is "one after" the last valid entry
     const pageEnd = Math.min( (page + 1) * itemsPerPage, memoizedData.length);
 
     const translatePageChange = useCallback(
