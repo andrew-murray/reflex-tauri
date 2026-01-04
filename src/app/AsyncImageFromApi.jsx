@@ -87,8 +87,9 @@ export default function AsyncImageFromApi({image, imageStyle, orientation, width
     {imageState === null && <Skeleton variant="rectangular"
       width={rotatedWidth} 
       height={rotatedHeight} 
+      style={imageStyle}
     /> }
-    {imageState != null && <img
+    {imageState !== null && <img
       src={imageState.image}
       className={oClass}
       style={Object.assign(
