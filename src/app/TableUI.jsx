@@ -299,7 +299,15 @@ export function NumericFilterDialog({images, filteredImages, metricKey, filtersF
   </Dialog>
 };
 
-export function FilterDialog({images, filteredImages, metricKey, filtersForMetric, handleClose, onSetFiltersForMetric, onSelectImageIndex}) {
+export function FilterDialog({
+  images,
+  filteredImages,
+  metricKey,
+  filtersForMetric,
+  handleClose,
+  onSetFiltersForMetric,
+  onSelectImageIndex
+}) {
 
   if (filteredNumeric.includes(metricKey)){
     return <NumericFilterDialog
