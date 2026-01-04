@@ -19,7 +19,7 @@ import SlideshowIcon from '@mui/icons-material/Slideshow';
 
 // invoke_load(image_id);
 
-const makeFilenameColumn = (def, onSelectImageIndex) =>
+const makeFilenameColumn = (def, onFocusImageIndex) =>
 {
     return Object.assign(
         {},
@@ -53,7 +53,7 @@ const makeFilenameColumn = (def, onSelectImageIndex) =>
                   <ContentCopyIcon fontSize="inherit" />
                 </IconButton>
                 <IconButton aria-label="slideshow" size="small"
-                    onClick={()=>{onSelectImageIndex(row.index);}}
+                    onClick={()=>{onFocusImageIndex(row.index);}}
                 >
                   <SlideshowIcon fontSize="inherit" />
                 </IconButton>
@@ -182,10 +182,12 @@ const StaffTable = ({
     filtersByMetric,
     onSelectMetric,
     onSetFiltersForMetric,
-    onSelectImageIndex,
-    onHoverImageIndex,
+    onFocusImageIndex,
+    onSetHoveredImageIndex,
     setPageLimits
 }) => {
+
+
 
   // Initiate your states
     const [loading, setLoading] = useState(false);
@@ -220,7 +222,7 @@ const StaffTable = ({
     });
 
     const Columns = React.useMemo( () => {
-            const Columns = makeColumns(onSelectImageIndex, images[0]);
+            const Columns = makeColumns(onFocusImageIndex, images[0]);
             return Columns;
         },
         [images]
@@ -242,9 +244,7 @@ const StaffTable = ({
 
             onSelectMetric={onSelectMetric}
             onSetFiltersForMetric={onSetFiltersForMetric}
-
-            onSelectImageIndex={onSelectImageIndex}
-            onSetHighlightedImageIndex={onHoverImageIndex}
+            onSetHoveredImageIndex={onSetHoveredImageIndex}
             setPageLimits={setPageLimits}
         />
     );

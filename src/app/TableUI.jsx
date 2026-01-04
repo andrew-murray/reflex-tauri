@@ -461,7 +461,8 @@ const TableUI = ({
   searchLabel = "Search",
   EmptyText,
   children,
-  onSetHighlightedImageIndex,
+  onSetHoveredImageIndex,
+  selectedImageIndex,
   handleRow,
   setPageLimits
 }) => {
@@ -489,12 +490,12 @@ const TableUI = ({
     const handleRowHover = (row, event) => {
       // this doesn't quite work, I need a notion of persistent/non-persistent selection?
       // also ... is the image loading fast enough??
-      onSetHighlightedImageIndex(row.index);
+      onSetHoveredImageIndex(row.index);
     }
     const handleRowLeave = (row, event) => {
       // this doesn't quite work, I need a notion of persistent/non-persistent selection?
       // also ... is the image loading fast enough??
-      onSetHighlightedImageIndex(null);
+      onSetHoveredImageIndex(null);
     }
 
     // const emSize = boxRef !== null ? parseFloat(getComputedStyle(boxRef.current).fontSize) : 0;

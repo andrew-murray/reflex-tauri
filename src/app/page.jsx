@@ -246,7 +246,7 @@ export default function Home() {
   const [filtersByMetric, setFiltersByMetric] = React.useState({});
   const [metricsToPlot, setMetricsToPlot] = React.useState([]);
   const [activeImageIndex, setActiveImageIndex] = React.useState(null);
-  const [selectedImageIndex, setSelectedImageIndex] = React.useState(0);
+  const [selectedImageIndex, setSelectedImageIndex] = React.useState(null);
   const [pageLimits, setPageLimits] = React.useState([0, 10]);
 
   const [metadataDBPath, setMetadataDBPath] = React.useState(null);
@@ -898,8 +898,8 @@ export default function Home() {
                   onSelectMetric={selectMetric}
                   onSetFiltersForMetric={onSetFiltersForMetric}
 
-                  onSelectImageIndex={(i)=>{setActiveImageIndex(i);}}
-                  onHoverImageIndex={(i)=>{setSelectedImageIndex(i);}}
+                  onFocusImageIndex={(i)=>{setActiveImageIndex(i);}}
+                  onSetHoveredImageIndex={(i)=>{setSelectedImageIndex(i);}}
                   setPageLimits={setPageLimits}
                   imagePageLimits={pageLimits}
                 />
