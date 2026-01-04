@@ -238,7 +238,7 @@ export function NumericFilterDialog({images, filteredImages, metricKey, filtersF
     </IconButton>
     <DialogContent
       dividers
-      style={{padding: 10, minWidth: 500, maxHeight: 1200}}
+      style={{padding: 10, minWidth: 500, maxHeight: 1200, overflow: "hidden"}}
     >
       <Box style={{display: "flex", justifyContent: "center", padding: 5}}>
         <Paper style={{width: "100%", minWidth: 500, height: 400, padding: 10, overflow: "hidden"}}>
