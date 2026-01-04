@@ -7,6 +7,7 @@ import Skeleton from '@mui/material/Skeleton';
 import "core-js/modules/esnext.uint8-array.to-base64.js";
 import { invoke } from '@tauri-apps/api/core';
 import Paper from '@mui/material/Paper';
+import CircularProgress from '@mui/material/CircularProgress';
 
 const getImageTypeFromImage = (image) => {
   if (!!image["adobe"])
@@ -24,7 +25,7 @@ const getImageTypeFromImage = (image) => {
   }
 }
 
-export default function AsyncImageFromApi({image, imageStyle, orientation, width, height})
+export default function AsyncImageFromApi({image, imageStyle, orientation, width, height, loadingVariant})
 {
   const [imageState, setImageState] = React.useState(null);
   React.useEffect(
@@ -83,12 +84,29 @@ export default function AsyncImageFromApi({image, imageStyle, orientation, width
   const rotatedWidth = oClass === undefined ? width: height;
   const rotatedHeight = oClass === undefined ? height: width;
 
+  const resolvedLoadingVariant = loadingVariant ?? "skeleton";
+
   return <React.Fragment>
-    {imageState === null && <Skeleton variant="rectangular"
+    {imageState === null && (resolvedLoadingVariant === "skeleton") && <Skeleton variant="rectangular"
       width={rotatedWidth} 
       height={rotatedHeight} 
       style={imageStyle}
     /> }
+    {imageState === null && (resolvedLoadingVariant === "spinner") && 
+      <div style={Object.assign(
+        {
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        },
+        imageStyle,
+        {width: rotatedWidth, height: rotatedHeight}
+      )}>
+        <div>
+          <CircularProgress color="secondary"/>
+        </div>
+      </div>
+    }
     {imageState !== null && <img
       src={imageState.image}
       className={oClass}

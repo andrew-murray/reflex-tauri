@@ -338,9 +338,15 @@ function NavDrawer({
   const imageFromImageIndex = (index) => <AsyncImageFromApi
     key={`image-${index}`}
     image={images[index]}
+    loadingVariant="spinner"
     height={200}
     orientation={images[index] !== undefined ? imageToOrientation[images[index].id] : undefined}
-    imageStyle={{objectFit: "contain", display: index === activeImageIndex ? undefined : "none"}}
+    // we need to be very careful here not to set display to undefined, as this will mess with the internal
+    // logic of AsyncImageFromApi
+    imageStyle={Object.assign(
+      {objectFit: "contain"}, 
+      index === activeImageIndex ? {} : {display: "none"}
+    )}
   />;
 
   const quickRange  = (lo, hi) => {
