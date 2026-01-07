@@ -37,4 +37,6 @@ rawloader = "0.37.1"
 rexif = "0.7.5"
 xmp_toolkit = "=1.11.0"
 rayon = "1.11.0"
+log = "0.4.26"
+chrono = "0.4.42"
 

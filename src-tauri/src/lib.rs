@@ -23,10 +23,33 @@ use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tauri_plugin_fs::FsExt;
 use tauri_plugin_opener::OpenerExt;
 use crate::image_data::ImageMetadataFields;
+use log::{Record, Level, Metadata, info, warn, error, LevelFilter};
+use chrono::{DateTime, Local};
+
+struct SimpleLogger;
 
 mod lrprev;
 mod image_folder;
 mod image_data;
+
+impl log::Log for SimpleLogger {
+    fn enabled(&self, metadata: &Metadata) -> bool {
+        // metadata.level() <= Level::Info
+        return true;
+    }
+
+    fn log(&self, record: &Record) {
+        let now = Local::now();
+        let format_time = now.format("%H:%M:%S%.3f");
+        if self.enabled(record.metadata()) {
+            println!("{} : {} - {}", format_time, record.level(), record.args());
+        }
+    }
+
+    fn flush(&self) {}
+}
+
+static LOGGER: SimpleLogger = SimpleLogger;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct SharedAppState {
@@ -67,15 +90,15 @@ where
 fn get_library_path_from_config_file(adobe_config_path: &str) -> Result<String, ()> {
     let path_exists_result = fs::exists(&adobe_config_path);
     if !path_exists_result.is_ok() {
-        println!("{}", "unimp 2");
+        error!("{}", "unimp 2");
         unimplemented!();
     }
     if path_exists_result.is_ok() && !path_exists_result.unwrap() {
-        println!("{}", "unimp 3");
+        error!("{}", "unimp 3");
         unimplemented!();
     }
 
-    println!("{}", "reading from ".to_owned() + &adobe_config_path);
+    info!("{}", "reading from ".to_owned() + &adobe_config_path);
     if let Ok(lines) = read_lines(&adobe_config_path) {
         // Consumes the iterator, returns an (Optional) String
         // FIXME: Should really parse this properly
@@ -129,7 +152,7 @@ async fn do_sql(preview_db_path: &str) -> HashMap<u64, PreviewData> {
             );
         }
     } else {
-        println!("{}", "all is not wel");
+        warn!("{}", "all is not wel");
     }
     return image_id_to_image;
 }
@@ -157,7 +180,7 @@ impl Clone for LightroomConfDirs {
 
 fn find_configuration_relative_to_catalog(cat_path_value: &String) -> Option<LightroomConfDirs>
 {
-    println!("library_path = {}", cat_path_value);
+    info!("library_path = {}", cat_path_value);
     let cat_parent = Path::new(&cat_path_value).parent();
     if cat_parent.is_none() {
         return None;
@@ -172,7 +195,7 @@ fn find_configuration_relative_to_catalog(cat_path_value: &String) -> Option<Lig
     let mut metadata_db_path: Option<String> = None;
     for entry in helper_paths {
         if let Ok(candidate_metadata_path) = entry {
-            println!(
+            info!(
                 "candidate_metadata_path = {}",
                 candidate_metadata_path.display()
             );
@@ -199,7 +222,7 @@ fn find_configuration_relative_to_catalog(cat_path_value: &String) -> Option<Lig
     let mut preview_db_path: Option<String> = None;
     for entry in preview_paths {
         if let Ok(candidate_preview_path) = entry {
-            println!(
+            info!(
                 "candidate_preview_path = {}",
                 candidate_preview_path.display()
             );
@@ -232,7 +255,7 @@ fn find_configuration_relative_to_catalog(cat_path_value: &String) -> Option<Lig
 fn find_configuration() -> Option<LightroomConfDirs> {
     let app_data_result = env::var("APPDATA");
     if !app_data_result.is_ok() {
-        println!("{}", "unimp 1");
+        error!("{}", "unimp 1");
         return None;
     }
 
@@ -242,7 +265,7 @@ fn find_configuration() -> Option<LightroomConfDirs> {
     let expected_adobe_prefs = app_data_dir + "/" + preferences_relpath;
     let cat_path = get_library_path_from_config_file(&expected_adobe_prefs);
     if !cat_path.is_ok() {
-        println!("library_path was not defined");
+        warn!("library_path was not defined");
         return None;
     }
     let cat_path_value = cat_path.unwrap();
@@ -522,11 +545,11 @@ fn get_app_state_from_image_folder(folder: &String, _additive: bool) -> AppState
 
 fn update_app_state_for_folder(app_state: tauri::State<'_, Mutex<AppState>>, folder: &String, additive: bool)
 {
-    println!("Starting update_app_state_for_folder");
+    info!("Starting update_app_state_for_folder");
     let updated_app_state = get_app_state_from_image_folder(folder, additive);
     let mut mutable_app_state = app_state.lock().unwrap();
     *mutable_app_state = updated_app_state;
-    println!("Ended update_app_state_for_folder");
+    info!("Ended update_app_state_for_folder");
 }
 
 
@@ -534,7 +557,7 @@ fn update_app_state_for_folder(app_state: tauri::State<'_, Mutex<AppState>>, fol
 async fn update_app_state_for_folder_and_emit_state(app_handle: tauri::AppHandle, state: tauri::State<'_, Mutex<AppState>>, folder: String, additive: bool) -> CommandResult<tauri::ipc::Response>
 {
     update_app_state_for_folder(state, &folder, additive);
-    println!("emitting event {}", "shared-app-state-set");
+    info!("emitting event {}", "shared-app-state-set");
     let _ = app_handle.emit("shared-app-state-set", {}).unwrap();
     Ok(Response::new(Vec::new()))
 }
@@ -635,6 +658,10 @@ fn initialise_app_state(app: &AppHandle)
         };
         app.manage(Mutex::new(app_state));
     }
+    // let folder = "C:\\selected".to_string();
+    // let additive = false;
+    // let app_state = get_app_state_from_image_folder(&folder, additive);
+    // app.manage(Mutex::new(app_state));
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -649,6 +676,13 @@ struct MenuEventArgs
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+
+    if !log::set_logger(&LOGGER)
+        .map(|()| log::set_max_level(LevelFilter::Debug)).is_ok()
+    {
+        println!("Error: Failed to initialise logging");
+    }
+    info!("App startup");
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
@@ -678,7 +712,7 @@ pub fn run() {
                 .build()?;
             app.set_menu(menu)?;
             app.on_menu_event(move |app: &tauri::AppHandle, event| {
-                println!("menu event: {:?}", event.id());
+                info!("menu event: {:?}", event.id());
                 // these menu events are wired up very strangely
                 // we need to fire off async tasks, and ... I wanted to just use tauri to manage that
                 // and that combined with passing around the appHandle didn't seem to play nice
@@ -690,7 +724,7 @@ pub fn run() {
                         if folder_path.is_some()
                         {
                             let folder = folder_path.unwrap();
-                            println!("emitting-menu-event");
+                            info!("emitting-menu-event");
                             app.emit("menu-event", MenuEventArgs{
                                 kind: "folder".to_string(),
                                 folder: Some(folder.to_string()),
@@ -725,7 +759,7 @@ pub fn run() {
                             .blocking_show();
                     }
                     _ => {
-                        println!("expected but unimplemented event with id {:?}", event.id());
+                        info!("expected but unimplemented event with id {:?}", event.id());
                     }
                 }
             });
