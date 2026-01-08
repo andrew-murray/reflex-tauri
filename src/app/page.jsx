@@ -11,7 +11,8 @@ import GraphDialog from "./GraphDialog"
 import CssBaseline from '@mui/material/CssBaseline';
 import { styled } from '@mui/material/styles';
 import {
-    Box
+    Box,
+    Paper
 } from "@mui/material";
 import {pathsep} from "./defs"
 import {metadata, preview} from "./LightroomDB"
@@ -882,17 +883,17 @@ export default function Home() {
           }
           {(images.length !== 0 && !inProgress) &&
             <Box style={{width: "100%", height: tableHeight, display: "flex", flexDirection: "column", marginTop: spaceBetweenComponents }}>
-              <Tabs
-                value={activeTab}
-                onChange={handleTabChange}
-                aria-label="table-gallery-switcher"
-                role="navigation"
-              >
-                <Tab label="Metadata" style={{
-                  background: "#232323" // <!-- colour chosen to match the table background -->
-                }}/> 
-                <Tab label="Gallery"  style={{background: "#232323"}}/>
-              </Tabs>
+              <Paper style={{width: "fit-content"}}>
+                <Tabs
+                  value={activeTab}
+                  onChange={handleTabChange}
+                  aria-label="table-gallery-switcher"
+                  role="navigation"
+                >
+                  <Tab label="Metadata" /> 
+                  <Tab label="Gallery" />
+                </Tabs>
+              </Paper>
               {activeTab === 0 && 
                 <DataTable
                   key={uniqueDataKey}
