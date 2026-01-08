@@ -175,6 +175,7 @@ export default function GraphPanel({images, logSelected, onSetLogMode, freqSelec
                     data={reducedData[shutter]}
                     dataKey={shutter}
                     color="#c0ea02"
+                    tooltipColor="#c0ea02"
                     logMode={logSelected ? true : undefined}
                     freqMode={freqSelected ? true : undefined}
                     ratingMode={ratingMode}
@@ -187,6 +188,7 @@ export default function GraphPanel({images, logSelected, onSetLogMode, freqSelec
                     data={reducedData[aperture]}
                     dataKey={aperture}
                     color="#eac002"
+                    tooltipColor="#eac002"
                     logMode={logSelected ? true : undefined}
                     freqMode={freqSelected ? true : undefined}
                     ratingMode={ratingMode}
@@ -199,6 +201,7 @@ export default function GraphPanel({images, logSelected, onSetLogMode, freqSelec
                     data={reducedData[iso]}
                     dataKey={iso}
                     color="#4090c0"
+                    tooltipColor="#4090c0"
                     logMode={logSelected ? true : undefined}
                     freqMode={freqSelected ? true : undefined}
                     ratingMode={ratingMode}

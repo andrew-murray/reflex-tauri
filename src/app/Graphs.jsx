@@ -86,16 +86,50 @@ export function PieGraph({data, dataKey, color})
   </ResponsiveContainer>
 }
 
+export const labelFormatters = {
+  "iso_speed_rating" : (val) => {
+    const title = titles["iso_speed_rating"];
+    if (val === null || val === undefined || val === '')
+    {
+      return `${title} Unknown`;
+
+    }
+    else
+    {
+      return `${title} ${val}`;
+    }
+  },
+  "aperture_value": (val) => {
+    const title = titles["aperture_value"];
+    if (val === null || val === undefined || val === '')
+    {
+      return `${title} Unknown`;
+
+    }
+    else
+    {
+      return `${title} ƒ/${val}`;
+    }
+  },
+  "shutter_speed_value": (val) => {
+    const title = titles["shutter_speed_value"];
+    if (val === null || val === undefined || val === '')
+    {
+      return `${title} ${val}`;
+    }
+    else
+    {
+      return `${title} ${val}`;
+    }
+  }
+};
+
 // TODO: Make API for the graphs match? Data is currently not compatible
-export function BarGraphForDialog({data, dataKey, color, highlightBounds})
+export function BarGraphForDialog({data, dataKey, color, highlightBounds, tooltipColor})
 {
   const formattedData = GetFormattedData(data, dataKey);
   let categoryBounds = undefined;
   let lineBetweenCategories = undefined;
-  console.log({
-    highlightBounds,
-    formattedData
-  })
   if (highlightBounds !== undefined)
   {
     const values = formattedData.map(x => x.value);
@@ -174,7 +208,7 @@ export function BarGraphForDialog({data, dataKey, color, highlightBounds})
         <YAxis />
         <Tooltip 
           labelFormatter={labelFormatters[dataKey]}
-          labelStyle={{color}}
+          labelStyle={{color: tooltipColor || "#000000"}}
         />
         {categoryBounds !== undefined &&
           <ReferenceArea
@@ -189,51 +223,18 @@ export function BarGraphForDialog({data, dataKey, color, highlightBounds})
             position={lineBetweenCategories.position}
           />
         }
-        <Bar dataKey="count" fill={color} activeBar={<Rectangle fill="pink" stroke="blue" />} />
+        <Bar
+          dataKey="count"
+          name="Images"
+          fill={color}
+          activeBar={<Rectangle fill="pink" stroke="blue" />} 
+        />
       </BarChart>
     </ResponsiveContainer>
 }
 
-export const labelFormatters = {
-  "iso_speed_rating" : (val) => {
-    const title = titles["iso_speed_rating"];
-    if (val === null || val === undefined || val === '')
-    {
-      return `${title} Unknown`;
-
-    }
-    else
-    {
-      return `${title} ${val}`;
-    }
-  },
-  "aperture_value": (val) => {
-    const title = titles["aperture_value"];
-    if (val === null || val === undefined || val === '')
-    {
-      return `${title} Unknown`;
-
-    }
-    else
-    {
-      return `${title} ƒ/${val}`;
-    }
-  },
-  "shutter_speed_value": (val) => {
-    const title = titles["shutter_speed_value"];
-    if (val === null || val === undefined || val === '')
-    {
-      return `${title} ${val}`;
-    }
-    else
-    {
-      return `${title} ${val}`;
-    }
-  }
-};
-
 // TODO: Make API for the graphs match? Data is currently not compatible
-export function BarGraph({data, dataKey, color, logMode, freqMode, ratingMode})
+export function BarGraph({data, dataKey, color, tooltipColor, logMode, freqMode, ratingMode})
 {
   const title = titles[dataKey] || dataKey;
   const percentFormatter = (value, name, props) => {
@@ -271,7 +272,7 @@ export function BarGraph({data, dataKey, color, logMode, freqMode, ratingMode})
       <YAxis scale={logMode ? customLogScale : undefined}/>
       <Tooltip  
         labelFormatter={labelFormatters[dataKey]}
-        labelStyle={{color}}
+        labelStyle={{color: tooltipColor ||"#000000"}}
       />
       {(ratingMode === undefined || ratingMode === null) && 
         <Bar
