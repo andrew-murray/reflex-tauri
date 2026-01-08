@@ -229,6 +229,9 @@ export function BarGraphForDialog({data, dataKey, color, highlightBounds, toolti
           <ReferenceArea
             x1={categoryBounds[0]}
             x2={categoryBounds[1]}
+            // we need this, as if we draw a box at the edge of the plot
+            // recharts will sometimes discard it
+            ifOverflow="visible"
           />
         }
         {
