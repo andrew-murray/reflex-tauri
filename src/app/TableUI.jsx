@@ -247,7 +247,8 @@ export function NumericFilterDialog({
   const valuesForStoppedSlider = stoppedValues !== null ? stoppedValues : 
     (values !== null ? values.map(rawToStopped) : [0, normalSteps]);
   const valuesForLinearSlider = values !== null ? values : 
-    (stoppedValues !== null ? stoppedValues.map(stoppedToRaw) : [0, normalSteps]);
+    (stoppedValues !== null ? stoppedValues.map(stoppedToRaw) : [filterMin, filterMax]);
+
   const applyAndClose = () =>
   {
     if (values !== null || stoppedValues !== null)
