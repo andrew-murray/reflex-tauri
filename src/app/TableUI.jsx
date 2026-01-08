@@ -144,6 +144,9 @@ export function NumericFilterDialog({
     "aperture_value",
     "iso_speed_rating"
   ]);
+
+  const colorForGraph = Graphs.colorsForMetrics[metricKey] || undefined;
+
   const metricLikesStops = metricsThatGoInStops.has(metricKey);
   const [useStoppedScale, setUseStoppedScale] = useState(metricLikesStops);
 
@@ -297,6 +300,8 @@ export function NumericFilterDialog({
             data={useUnfilteredDataForGraph ? images : filteredImages}
             dataKey={metricKey}
             highlightBounds={valuesForLinearSlider}
+            color={colorForGraph}
+            tooltipColor={colorForGraph}
           />
         </Paper>
       </Box>

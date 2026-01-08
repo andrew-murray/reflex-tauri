@@ -174,8 +174,8 @@ export default function GraphPanel({images, logSelected, onSetLogMode, freqSelec
                 <Graphs.BarGraph
                     data={reducedData[shutter]}
                     dataKey={shutter}
-                    color="#c0ea02"
-                    tooltipColor="#c0ea02"
+                    color={Graphs.colorsForMetrics[shutter]}
+                    tooltipColor={Graphs.colorsForMetrics[shutter]}
                     logMode={logSelected ? true : undefined}
                     freqMode={freqSelected ? true : undefined}
                     ratingMode={ratingMode}
@@ -187,8 +187,8 @@ export default function GraphPanel({images, logSelected, onSetLogMode, freqSelec
                 <Graphs.BarGraph
                     data={reducedData[aperture]}
                     dataKey={aperture}
-                    color="#eac002"
-                    tooltipColor="#eac002"
+                    color={Graphs.colorsForMetrics[aperture]}
+                    tooltipColor={Graphs.colorsForMetrics[aperture]}
                     logMode={logSelected ? true : undefined}
                     freqMode={freqSelected ? true : undefined}
                     ratingMode={ratingMode}
@@ -200,8 +200,8 @@ export default function GraphPanel({images, logSelected, onSetLogMode, freqSelec
                 <Graphs.BarGraph
                     data={reducedData[iso]}
                     dataKey={iso}
-                    color="#4090c0"
-                    tooltipColor="#4090c0"
+                    color={Graphs.colorsForMetrics[iso]}
+                    tooltipColor={Graphs.colorsForMetrics[iso]}
                     logMode={logSelected ? true : undefined}
                     freqMode={freqSelected ? true : undefined}
                     ratingMode={ratingMode}

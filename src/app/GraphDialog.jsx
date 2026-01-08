@@ -50,6 +50,7 @@ function GraphPickerWidget({graphMode, setGraphMode})
 }
 
 export default function GraphDialog({images, metricKey, handleClose, color}) {
+  const colorForBarGraph = color || Graphs.colorsForMetrics[metricKey] || undefined;
   // Get the 0th element assuming this to be unique if-it-exists and undefined otherwise
   let title = metricKey;
   const matchedColumn = StaticColumnDefs.filter(c => c.accessorKey === metricKey)[0];
@@ -88,7 +89,8 @@ export default function GraphDialog({images, metricKey, handleClose, color}) {
         <Graphs.BarGraphForDialog
           data={images}
           dataKey={metricKey}
-          color={color}
+          color={colorForBarGraph}
+          tooltipColor={colorForBarGraph}
         />
       }
       {graphMode === GraphModeEnum.Pie &&

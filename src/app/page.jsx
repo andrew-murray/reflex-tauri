@@ -934,7 +934,6 @@ export default function Home() {
                 removeItemOnce(metricsToPlot, metric)
               )
             }}
-            color={ColorPalette[ index % ColorPalette.length]}
           />
         })}
         {

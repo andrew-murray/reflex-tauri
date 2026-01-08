@@ -20,7 +20,14 @@ const ScoreColorPalette = [
     "#ffa600"
 ];
 
-export function GetFormattedData(data, dataKey)
+export const colorsForMetrics = {
+  "shutter_speed_value": "#c0ea02",
+  "aperture_value": "#eac002",
+  "iso_speed_rating": "#4090c0",
+  "focal_length": "#c22a8e" 
+};
+
+export function GetFormattedData(data, dataKey, fixedColor)
 {
   let valueCounts = new Map();
   const defaultFormatter = (s) => s;
@@ -54,7 +61,14 @@ export function GetFormattedData(data, dataKey)
     // TODO: a null value, gets sorted ... where? How are we really handling null?
     const formatter = formatters[dataKey];
     const formattedData = [...valueCounts.entries()].map( (kv, index) => { 
-      return {"name": kv[0], "value": parserForField(kv[1].value), "count": kv[1].count,"fill": ColorPalette[ index % ColorPalette.length]};
+      return Object.assign(
+        {
+          "name": kv[0],
+          "value": parserForField(kv[1].value),
+          "count": kv[1].count
+        },
+        fixedColor ? {} : {"fill": ColorPalette[ index % ColorPalette.length]}
+      );
     }).toSorted( (a,b) => invSort ? b.value - a.value : a.value - b.value );
     return formattedData;
   }
@@ -62,7 +76,14 @@ export function GetFormattedData(data, dataKey)
   {
     // TODO: a null value, gets sorted ... where? How are we really handling null?
     const formattedData = [...valueCounts.entries()].map( (kv, index) => { 
-      return {"name": kv[0], "value": parserForField(kv[1].value), "count": kv[1].count,"fill": ColorPalette[ index % ColorPalette.length]};
+      return Object.assign(
+        {
+          "name": kv[0],
+          "value": parserForField(kv[1].value),
+          "count": kv[1].count
+        },
+        fixedColor ? {} : {"fill": ColorPalette[ index % ColorPalette.length]}
+      );
     }).toSorted( (a,b) => invSort ? b.value - a.value : a.value - b.value  );
     return formattedData;
   }
@@ -71,7 +92,7 @@ export function GetFormattedData(data, dataKey)
 // TODO: Make API for the graphs match? Data is currently not compatible
 export function PieGraph({data, dataKey, color})
 {
-  const formattedData = GetFormattedData(data, dataKey);
+  const formattedData = GetFormattedData(data, dataKey, false);
   const maxValueLength = formattedData.reduce(
       (acc, currentValue) => Math.max(acc, currentValue.name.length),
       0
@@ -79,14 +100,24 @@ export function PieGraph({data, dataKey, color})
   const legendLayout = maxValueLength > 10 ? "vertical" : "horizontal";
   return <ResponsiveContainer width="100%" height="100%">
     <PieChart>
-      <Pie data={formattedData} dataKey="count" nameKey="name" label />
+      <Pie 
+        data={formattedData}
+        dataKey="count"
+        nameKey="name"
+        label
+        // this startAngle/endAngle make it layout like a clock
+        // (the default would layout from "90" degrees anti-clockwise
+        //  which isn't super-natural when you're looking for specific categories)
+        startAngle={90}
+        endAngle={-270} 
+      />
       {(formattedData.length) < 6 && <Legend layout={legendLayout}/>}
       <Tooltip />
     </PieChart>
   </ResponsiveContainer>
 }
 
-export const labelFormatters = {
+const labelFormatters = {
   "focal_length": (val) => {
     // This exists because it's the only non-exposure triangle graph
     // that appears in NumericFilter (and therefore) so we need a mechanism for it
@@ -142,7 +173,9 @@ export const labelFormatters = {
 // TODO: Make API for the graphs match? Data is currently not compatible
 export function BarGraphForDialog({data, dataKey, color, highlightBounds, tooltipColor})
 {
-  const formattedData = GetFormattedData(data, dataKey);
+  const generateColors = color !== undefined;
+  const formattedData = GetFormattedData(data, dataKey, generateColors);
+
   let categoryBounds = undefined;
   let lineBetweenCategories = undefined;
   if (highlightBounds !== undefined)
@@ -242,6 +275,7 @@ export function BarGraphForDialog({data, dataKey, color, highlightBounds, toolti
           />
         }
         <Bar
+          stackId="a"
           dataKey="count"
           name="Images"
           fill={color}
@@ -295,8 +329,8 @@ export function BarGraph({data, dataKey, color, tooltipColor, logMode, freqMode,
       {(ratingMode === undefined || ratingMode === null) && 
         <Bar
           stackId="a"
-          dataKey={"count"}
-          name={"Images"}
+          dataKey="count"
+          name="Images"
           fill={color}
           activeBar={<Rectangle fill="pink" stroke="blue" />}
         />
