@@ -116,16 +116,21 @@ const filteredNumeric = [
   "focal_length"
 ];
 
-export function NumericFilterDialog({images, filteredImages, metricKey, filtersForMetric, handleClose, onSetFiltersForMetric}) {
-  // TODO: For shutterSpeed at least, we need to implement
-  // a different scale. So much of the shutter speed is in the (0,1) range, but ... it's reasonable to have values from 0-60
-  // https://mui.com/material-ui/react-slider/#non-linear-scale
+export function NumericFilterDialog({
+  images,
+  filteredImages,
+  metricKey,
+  filtersForMetric,
+  handleClose,
+  onSetFiltersForMetric
+}) {
   let title = metricKey;
   const matchedColumn = StaticColumnDefs.filter(c => c.accessorKey === metricKey)[0];
   if (matchedColumn !== undefined)
   {
     title = matchedColumn.header;
   }
+  const [useUnfilteredDataForGraph, setUseUnfilteredDataForGraph] = React.useState(false);
   const formattedData = useMemo(
     ()=>{
       return GetFormattedData(filteredImages, metricKey);
@@ -249,9 +254,9 @@ export function NumericFilterDialog({images, filteredImages, metricKey, filtersF
       <Box style={{display: "flex", justifyContent: "center", padding: 5}}>
         <Paper style={{width: "100%", minWidth: 500, height: 400, padding: 10, overflow: "hidden"}}>
           <Graphs.BarGraphForDialog
-            data={images}
+            data={useUnfilteredDataForGraph ? images : filteredImages}
             dataKey={metricKey}
-            highlightBounds={valuesAreSet ? valuesForLinearSlider : undefined}
+            highlightBounds={valuesForLinearSlider}
           />
         </Paper>
       </Box>
@@ -299,6 +304,15 @@ export function NumericFilterDialog({images, filteredImages, metricKey, filtersF
           label="Use Stopped Scale"
         />
       }
+      <FormControlLabel
+        control={
+          <Switch
+            checked={useUnfilteredDataForGraph}
+            onChange={(event)=>{setUseUnfilteredDataForGraph(event.target.checked);}}
+          />
+        }
+        label="Show All Data"
+      />
       <Button onClick={handleClose}>Cancel</Button>
       <Button onClick={applyAndClose}>Apply</Button>
     </DialogActions>
@@ -313,7 +327,6 @@ export function FilterDialog({
   handleClose,
   onSetFiltersForMetric
 }) {
-
   if (filteredNumeric.includes(metricKey)){
     return <NumericFilterDialog
       images={images}
