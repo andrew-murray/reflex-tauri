@@ -87,6 +87,21 @@ export function PieGraph({data, dataKey, color})
 }
 
 export const labelFormatters = {
+  "focal_length": (val) => {
+    // This exists because it's the only non-exposure triangle graph
+    // that appears in NumericFilter (and therefore) so we need a mechanism for it
+    // to be handled in agreement with the other three
+    const title = titles["focal_length"];
+    if (val === null || val === undefined || val === '')
+    {
+      return `${title} Unknown`;
+
+    }
+    else
+    {
+      return `${title} ${val}mm`;
+    }
+  },
   "iso_speed_rating" : (val) => {
     const title = titles["iso_speed_rating"];
     if (val === null || val === undefined || val === '')

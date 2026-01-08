@@ -6,6 +6,7 @@ const adobe_focalLength = "com_adobe_focalLength";
 const exif_shutter = "shutter_speed_value";
 const exif_aperture = "aperture_value";
 const exif_iso = "iso_speed_rating";
+const exif_focal_length = "focal_length";
 
 const exif_metering_mode = "metering_mode";
 const exif_flash = "flash";
@@ -26,7 +27,8 @@ export const titles = {
   [exif_aperture]: "Aperture",
   [adobe_iso]: "ISO",
   [exif_iso]: "ISO",
-  [adobe_focalLength]: "Focal Length"
+  [adobe_focalLength]: "Focal Length",
+  [exif_focal_length]: "Focal Length"
 };
 
 export const formatters = {
