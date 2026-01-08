@@ -37,7 +37,10 @@ export const formatters = {
     if (val !== undefined && val !== null && val.length === 2)
     {
         const valf = val[0]/val[1];
-        valS = valf < 0.2 ? `${val[0]}/${val[1]}` : valf.toPrecision(2);
+        // TODO: It's not clear when is best to switch from 1/X to X unit display
+        // BUT it's also important to note if this change, there's a similar function/constant
+        // in NumericFilterDialog that should be updated
+        valS = valf <= 0.25 ? `${val[0]}/${val[1]}` : valf.toPrecision(2);
     }
     return valS;
   }

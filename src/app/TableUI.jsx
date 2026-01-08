@@ -194,8 +194,11 @@ export function NumericFilterDialog({
       // toLocaleString() inserts commas
       return `${(+value.toPrecision(5)).toLocaleString()}`;
     }
-    else if(metricKey === "shutter_speed_value")
+    else if(metricKey === "shutter_speed_value" && value <= 0.25) 
     {
+      // note that we only apply this to short shutter-speeds
+      // Note that this hard-coded constant should match the constant in CameraData.formatters
+
       // see above comment on the magic "plus" here
       const denom = +((1/value).toPrecision(2));
       return `1/${denom}`;
