@@ -182,25 +182,33 @@ export function NumericFilterDialog({
   }
   const sliderStep = Number(filterIncrement.toPrecision(2));
 
+  // todo: we can fix all these as lookup tables really
   const totalMultiplier = filterMax/filterMin;
   const stepQuotient = Math.pow(totalMultiplier, 1.0 / normalSteps);
 
-  // todo: we can fix all these as tables really
-  const stoppedValueDisplay = (value)=>{
-    const outValue = stoppedToRaw(value);
-    if (metricKey === "shutter_speed_value")
+  const typicalValueDisplay = (value)=>{
+    if(metricKey === "iso_speed_rating")
     {
-      const denom = Math.round(1/outValue);
-      return `${outValue.toPrecision(3)} (1/${denom})`;
+      // to precision caps to 5 sig figs, but also extends "integers" to 5 sig figs
+      // + treats the thing as its simplest number again and results in the discarding of redundancy
+      // toLocaleString() inserts commas
+      return `${(+value.toPrecision(5)).toLocaleString()}`;
+    }
+    else if(metricKey === "shutter_speed_value")
+    {
+      // see above comment on the magic "plus" here
+      const denom = +((1/value).toPrecision(2));
+      return `1/${denom}`;
     }
     else
     {
-      return `${outValue.toPrecision(3)}`;
+      return `${value.toPrecision(3)}`;
     }
   };
 
-  const typicalValueDisplay = (value)=>{
-    return `${value.toPrecision(3)}`;
+  const stoppedValueDisplay = (value)=>{
+    const outValue = stoppedToRaw(value);
+    return typicalValueDisplay(outValue);
   };
 
   const stoppedToRaw = (value) => {
