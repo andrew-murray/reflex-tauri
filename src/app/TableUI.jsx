@@ -204,13 +204,41 @@ export function NumericFilterDialog({
   };
 
   const stoppedToRaw = (value) => {
-    const mult = Math.pow(stepQuotient, value);
-    const outValue = filterMin * mult;
-    return outValue;
+    // our start and end have well-defined values, that
+    // we shouldn't "calculate" or the precision will cause unexpected behaviour
+    // (the particular bug this skirts is "the max of the slider being ... just below"
+    // the max of the filterRange ... kinda enforce discarding the maximum of the data
+    if (value === 0)
+    {
+      return filterMin;
+    }
+    else if(value === normalSteps)
+    {
+      return filterMax;
+    }
+    else
+    {
+      const mult = Math.pow(stepQuotient, value);
+      const outValue = filterMin * mult;
+      return outValue;
+    }
   };
   const rawToStopped = (value) => {
-    const quotients = Math.log(value/filterMin) / Math.log(stepQuotient);
-    return quotients;
+    // here we mirror the "exact-conversion" logic present in
+    // the stoppedToRaw - but it's not clear if it's needed to avoid bugs
+    if (value === filterMin)
+    {
+      return 0;
+    }
+    else if(value === filterMax)
+    {
+      return normalSteps;
+    }
+    else
+    {
+      const quotients = Math.log(value/filterMin) / Math.log(stepQuotient);
+      return quotients;
+    }
   };
 
   // stoppedValues are recorded as slider steps
