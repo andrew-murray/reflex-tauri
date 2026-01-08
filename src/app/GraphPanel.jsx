@@ -170,7 +170,7 @@ export default function GraphPanel({images, logSelected, onSetLogMode, freqSelec
     return <Paper style={{width: "100%", height: "100%"}}>
         <Grid container columns={10} style={{width: "100%", height: "100%"}}>
           <Grid item xs={3} style={{textAlign: "center", height: "100%"}}>
-            <Paper style={{margin: "auto", width: "100%", height: "100%", paddingTop: "1em", paddingRight: "0.5em"}}>
+            <Paper elevation={0} square={true} style={{margin: "auto", width: "100%", height: "100%", paddingTop: "1em", paddingRight: "0.5em"}}>
                 <Graphs.BarGraph
                     data={reducedData[shutter]}
                     dataKey={shutter}
@@ -183,7 +183,7 @@ export default function GraphPanel({images, logSelected, onSetLogMode, freqSelec
             </Paper>
           </Grid>
           <Grid item xs={3} style={{textAlign: "center", height: "100%"}}>
-            <Paper style={{margin: "auto", width: "100%", height: "100%", paddingTop: "1em", paddingRight: "0.5em"}}>
+            <Paper elevation={0} square={true} style={{margin: "auto", width: "100%", height: "100%", paddingTop: "1em", paddingRight: "0.5em"}}>
                 <Graphs.BarGraph
                     data={reducedData[aperture]}
                     dataKey={aperture}
@@ -196,7 +196,7 @@ export default function GraphPanel({images, logSelected, onSetLogMode, freqSelec
             </Paper>
           </Grid>
           <Grid item xs={3} style={{textAlign: "center", height: "100%"}}>
-            <Paper style={{margin: "auto", width: "100%", height: "100%", paddingTop: "1em", paddingRight: "0.5em"}}>
+            <Paper elevation={0} square={true} style={{margin: "auto", width: "100%", height: "100%", paddingTop: "1em", paddingRight: "0.5em"}}>
                 <Graphs.BarGraph
                     data={reducedData[iso]}
                     dataKey={iso}
